@@ -2,430 +2,351 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Bathymetry Grid Generator</title>
-<link rel="preconnect" href="https://unpkg.com">
-<style>
-  :root { --bg:#0b1020; --card:#121a33; --muted:#9fb0d3; --text:#eaf0ff; }
-  body { margin:0; font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-         color:var(--text); background:radial-gradient(1200px 700px at 20% -10%, #1f2c5a 0, #0b1020 55%); }
-  .wrap { max-width: 900px; margin: 48px auto; padding: 0 16px; }
-  .card { background:var(--card); border:1px solid #24325e; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-  header { padding:20px 22px; border-bottom:1px solid #24325e; display:flex; align-items:center; gap:14px }
-  header h1 { font-size:18px; margin:0; letter-spacing:.2px }
-  .body { padding: 18px 22px 22px }
-  form { display:grid; gap:14px; }
-  .row { display:grid; gap:14px; grid-template-columns: repeat(2,1fr); }
-  .row3 { display:grid; gap:14px; grid-template-columns: repeat(3,1fr); }
-  label { display:grid; gap:6px; color:var(--muted); font-weight:500; }
-  input[type="number"], input[type="text"], select {
-    background:#0e1530; border:1px solid #24325e; color:var(--text);
-    border-radius: 10px; padding:10px 12px;
-  }
-  input[type="checkbox"] { transform: scale(1.2); }
-  .actions { display:flex; gap:10px; align-items:center; }
-  button {
-    background:#2e7bff; border:0; color:white; padding:10px 14px; border-radius: 10px; cursor:pointer;
-    font-weight:600;
-  }
-  .ghost { background:transparent; border:1px solid #2e7bff; color:#cfe0ff }
-  .status { min-height: 1.4em; color:#bcd1ff; margin-top:8px }
-  .foot { margin-top: 12px; font-size:13px; color:#8aa0cd }
-  code { background:#0e1530; border:1px solid #24325e; padding:1px 6px; border-radius:6px }
-</style>
-<script src="https://unpkg.com/proj4@2.11.0/dist/proj4.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Parameter JSON Generator — SLB Theme</title>
+  <meta name="description" content="Generate a JSON file with coordinates, UTM zone, and hemisphere flag." />
+  <style>
+    :root{
+      --slb-blue:#003366;      /* primary brand blue */
+      --slb-blue-600:#1c5991;  /* accent (not official, chosen for UI states) */
+      --slb-blue-050:#f1f5fb;  /* very light background */
+      --ink:#0b1320;
+      --muted:#5c6b8a;
+      --ok:#0f9d58;
+      --err:#c62828;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";
+      color:var(--ink);
+      background:linear-gradient(180deg,var(--slb-blue-050),#ffffff 40%);
+    }
+    header{
+      background:var(--slb-blue);
+      color:#fff;
+      padding:24px 16px;
+      text-align:center;
+    }
+    header h1{
+      margin:0 0 4px;
+      font-weight:800; letter-spacing:.2px;
+    }
+    header p{margin:0; opacity:.9}
+    main{
+      display:grid;
+      place-items:center;
+      padding:28px 16px 48px;
+    }
+    .card{
+      width:100%;
+      max-width:860px;
+      background:#fff;
+      border-radius:var(--radius);
+      box-shadow:0 8px 30px rgba(0,0,0,.08);
+      overflow:hidden;
+      border:1px solid #e6eef7;
+    }
+    .card .bar{
+      height:6px;
+      background:linear-gradient(90deg,var(--slb-blue),var(--slb-blue-600));
+    }
+    .content{
+      padding:20px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:18px;
+    }
+    @media (min-width:860px){
+      .content{grid-template-columns:1.2fr .8fr}
+    }
+    fieldset{
+      border:1px solid #e6eef7;
+      border-radius:12px;
+      padding:16px;
+    }
+    legend{
+      padding:0 8px;
+      color:var(--slb-blue);
+      font-weight:700;
+    }
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    label{
+      display:block;
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    input[type="number"]{
+      width:100%;
+      padding:12px 12px;
+      border:1px solid #d8e3f3;
+      border-radius:10px;
+      font-size:16px;
+      transition:border .15s ease, box-shadow .15s ease;
+    }
+    input[type="number"]:focus{
+      outline:none;
+      border-color:var(--slb-blue-600);
+      box-shadow:0 0 0 4px rgba(28,89,145,.12);
+    }
+    .switch{
+      display:flex; align-items:center; gap:10px; margin-top:8px;
+    }
+    .actions{
+      display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;
+    }
+    button{
+      appearance:none;
+      border:none;
+      background:var(--slb-blue);
+      color:#fff;
+      padding:12px 18px;
+      border-radius:12px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .06s ease, background .15s ease, box-shadow .15s ease;
+      box-shadow:0 6px 16px rgba(0,51,102,.25);
+    }
+    button:hover{background:var(--slb-blue-600)}
+    button:active{transform:translateY(1px)}
+    button.secondary{
+      background:#fff; color:var(--slb-blue);
+      border:1px solid #cfe1f7; box-shadow:none;
+    }
+    .muted{
+      font-size:13px; color:var(--muted);
+    }
+    .preview{
+      background:#0c1b33; color:#e7eefc;
+      border-radius:12px; padding:12px; min-height:220px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,Monaco,monospace;
+      overflow:auto;
+      border:1px solid #243a67;
+      white-space:pre;
+      tab-size:2;
+    }
+    .status{
+      min-height:20px; font-size:14px; margin-top:8px;
+    }
+    .status.ok{ color:var(--ok) }
+    .status.err{ color:var(--err) }
+    footer{
+      text-align:center; padding:20px; color:var(--muted); font-size:13px;
+    }
+    .kpi{
+      display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;
+      color:#254a7a; font-size:13px;
+    }
+    .kpi div{background:#f6f9fe;border:1px solid #e6eef7;border-radius:8px;padding:8px}
+    .kpi strong{color:#0e3770}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <header><h1>Bathymetry Grid Generator (client-side)</h1></header>
-    <div class="body">
-      <form id="f">
-        <div class="row3">
-          <label>Longitude start
-            <input type="number" step="0.000001" name="lonStart" value="-44.87" required />
-          </label>
-          <label>Longitude end
-            <input type="number" step="0.000001" name="lonEnd" value="-44.48" required />
-          </label>
-          <label>Zone (UTM)
-            <input type="number" name="zone" value="23" required />
-          </label>
-        </div>
-        <div class="row3">
-          <label>Latitude start
-            <input type="number" step="0.000001" name="latStart" value="-25.85" required />
-          </label>
-          <label>Latitude end
-            <input type="number" step="0.000001" name="latEnd" value="-25.45" required />
-          </label>
-          <label>Southern Hemisphere?
-            <div style="display:flex;align-items:center;gap:8px">
-              <input type="checkbox" name="south" checked />
-              <span style="color:#89a1cf">Check for <code>South=true</code></span>
+  <header>
+    <h1>Parameter JSON Generator</h1>
+    <p>Interface to build & download your Bathymetry input JSON file.</p>
+  </header>
+  <main>
+    <section class="card" role="region" aria-labelledby="form-title">
+      <div class="bar" aria-hidden="true"></div>
+      <div class="content">
+        <!-- Left: Form -->
+        <div>
+          <h2 id="form-title" class="sr-only">Parameters</h2>
+
+          <fieldset>
+            <legend>Coordinates</legend>
+            <div class="row" style="margin-bottom:12px">
+              <div>
+                <label for="lonStart">Longitude Start</label>
+                <input id="lonStart" name="lonStart" type="number" step="0.01" required />
+              </div>
+              <div>
+                <label for="lonEnd">Longitude End</label>
+                <input id="lonEnd" name="lonEnd" type="number" step="0.01" required />
+              </div>
             </div>
-          </label>
-        </div>
-        <div class="row3">
-          <label>Grid step X (m)
-            <input type="number" name="dx" value="200" min="10" step="10" required />
-          </label>
-          <label>Grid step Y (m)
-            <input type="number" name="dy" value="200" min="10" step="10" required />
-          </label>
-          <label>Smoothing (sigma)
-            <input type="number" name="sigma" value="5" min="0" step="1" required />
-          </label>
-        </div>
-        <div class="row3">
-          <label>IDW neighbors (k)
-            <input type="number" name="idwK" value="8" min="1" max="32" />
-          </label>
-          <label>IDW power (p)
-            <input type="number" name="idwP" value="2" min="1" max="6" step="0.5" />
-          </label>
-          <label>Sample density (API)
-            <select name="sample">
-              <option value="1">1 (dense)</option>
-              <option value="3">3</option>
-              <option value="5" selected>5 (default)</option>
-              <option value="10">10 (sparse)</option>
-            </select>
-          </label>
-        </div>
-        <div class="actions">
-          <button type="submit">Generate & Download</button>
-          <button type="button" class="ghost" id="try">Try with current settings</button>
-        </div>
-        <div class="status" id="status"></div>
-        <details class="foot">
-          <summary>What this does</summary>
-          <div>
-            Calls the bathymetry API for your lon/lat box, converts to UTM (<code>zone</code> + <code>South</code>),
-            builds a regular grid (<code>dx/dy</code>), interpolates depths with IDW, applies a Gaussian smooth, then
-            downloads a text file with the header + data in your original format.
+            <div class="row">
+              <div>
+                <label for="latStart">Latitude Start</label>
+                <input id="latStart" name="latStart" type="number" step="0.01" required />
+              </div>
+              <div>
+                <label for="latEnd">Latitude End</label>
+                <input id="latEnd" name="latEnd" type="number" step="0.01" required />
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset style="margin-top:12px">
+            <legend>Projection</legend>
+            <div class="row">
+              <div>
+                <label for="zone">UTM Zone</label>
+                <input id="zone" name="zone" type="number" step="1" min="1" max="60" required />
+              </div>
+              <div class="switch">
+                <input id="south" name="south" type="checkbox" />
+                <label for="south">South Hemisphere (<span class="muted">sets <code>South</code> boolean</span>)</label>
+              </div>
+            </div>
+            <div class="kpi" aria-hidden="true">
+              <div>Hint: <strong>Zone 23S</strong> covers parts of Brazil.</div>
+              <div>Checked = <strong>true</strong>, Unchecked = <strong>false</strong></div>
+            </div>
+          </fieldset>
+
+          <div class="actions">
+            <button id="btnGenerate" type="button" title="Generate and download JSON">Generate JSON</button>
+            <button id="btnReset" class="secondary" type="button" title="Reset to defaults">Reset</button>
+            <span id="status" class="status" role="status" aria-live="polite"></span>
           </div>
-        </details>
-      </form>
-    </div>
-  </div>
-</div>
+          <p class="muted">File name: <code>parameters.json</code></p>
+        </div>
 
-<script>
-const statusEl = document.getElementById('status');
-const form = document.getElementById('f');
-const tryBtn = document.getElementById('try');
+        <!-- Right: Preview -->
+        <div>
+          <h3 style="margin:0 0 8px;color:var(--slb-blue)">Preview</h3>
+          <pre id="preview" class="preview" aria-label="JSON preview"></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Built with ❤️ in SLB blues. Primary color #003366.
+  </footer>
 
-function setStatus(msg) { statusEl.textContent = msg; }
-function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-function require(cond, msg){ if(!cond) throw new Error(msg); }
+  <script>
+    // Default values (from your request)
+    const defaults = {
+      coordinates: {
+        longitude: { start: -44.87, end: -44.48 },
+        latitude:  { start: -25.85, end: -25.45 }
+      },
+      zone: 23,
+      South: true
+    };
 
-function utmProjDef(zone, south) {
-  const hemi = south ? '+south ' : '';
-  return `+proj=utm +zone=${zone} ${hemi}+datum=WGS84 +units=m +no_defs`;
-}
+    const els = {
+      lonStart: document.getElementById('lonStart'),
+      lonEnd:   document.getElementById('lonEnd'),
+      latStart: document.getElementById('latStart'),
+      latEnd:   document.getElementById('latEnd'),
+      zone:     document.getElementById('zone'),
+      south:    document.getElementById('south'),
+      preview:  document.getElementById('preview'),
+      status:   document.getElementById('status'),
+      btnGenerate: document.getElementById('btnGenerate'),
+      btnReset: document.getElementById('btnReset'),
+    };
 
-// Build polygon coords in required order (clockwise rectangle)
-function rectPolygon(lon0, lat0, lon1, lat1) {
-  return [
-    [lon0, lat0],
-    [lon0, lat1],
-    [lon1, lat1],
-    [lon1, lat0],
-    [lon0, lat0],
-  ];
-}
+    function setDefaults(){
+      els.lonStart.value = defaults.coordinates.longitude.start;
+      els.lonEnd.value   = defaults.coordinates.longitude.end;
+      els.latStart.value = defaults.coordinates.latitude.start;
+      els.latEnd.value   = defaults.coordinates.latitude.end;
+      els.zone.value     = defaults.zone;
+      els.south.checked  = defaults.South;
+      updatePreview(); // sync preview
+      clearStatus();
+    }
 
-async function fetchBathymetry(coords, sample=5) {
-  const payload = { type: 'Polygon', coordinates: [coords] };
-  const encoded = encodeURIComponent(JSON.stringify(payload));
-  const url = `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${sample}&jsonsrc=${encoded}`;
-  const res = await fetch(url, { headers: { 'accept': 'application/json' }});
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  return res.json();
-}
+    function clearStatus(){ els.status.textContent=''; els.status.className='status'; }
 
-// K-nearest naive search
-function kNearest(points, x, y, k) {
-  const dists = points.map((p, i) => {
-    const dx = p.x - x, dy = p.y - y;
-    return { i, d: dx*dx + dy*dy };
-  });
-  dists.sort((a,b)=>a.d-b.d);
-  return dists.slice(0, k).map(o => points[o.i]);
-}
+    function readValues(){
+      // Important: coerce to numbers, handle NaN
+      const lonStart = Number(els.lonStart.value);
+      const lonEnd   = Number(els.lonEnd.value);
+      const latStart = Number(els.latStart.value);
+      const latEnd   = Number(els.latEnd.value);
+      const zone     = Number(els.zone.value);
+      const South    = !!els.south.checked;
 
-function idwInterpolate(points, X, Y, k=8, p=2) {
-  require(Array.isArray(Y) && Y.length>0, 'Internal: empty Y grid.');
-  require(Array.isArray(X) && X.length>0 && X[0] && X[0].length>0, 'Internal: empty X grid.');
-  require(points.length>0, 'No bathymetry points available for interpolation.');
-  const ny = Y.length, nx = X[0].length;
-  const Z = Array.from({length: ny}, ()=> new Float64Array(nx));
-  for (let j=0;j<ny;j++){
-    for (let i=0;i<nx;i++){
-      const x = X[j][i], y = Y[j][i];
-      const neigh = kNearest(points, x, y, Math.min(k, points.length));
-      let num = 0, den = 0, exact = null;
-      for (const q of neigh){
-        const dx = x - q.x, dy = y - q.y;
-        const d = Math.hypot(dx, dy);
-        if (d === 0) { exact = q.z; break; }
-        const w = 1 / Math.pow(d, p);
-        num += w * q.z;
-        den += w;
+      return { lonStart, lonEnd, latStart, latEnd, zone, South };
+    }
+
+    function validate(v){
+      // Why: prevent obvious mistakes before writing files
+      if([v.lonStart,v.lonEnd,v.latStart,v.latEnd,v.zone].some(n => Number.isNaN(n))){
+        return "All numeric fields must be valid numbers.";
       }
-      Z[j][i] = (exact !== null) ? exact : (den > 0 ? num/den : NaN);
+      if(v.lonStart > v.lonEnd){ return "Longitude start must be ≤ longitude end."; }
+      if(v.latStart > v.latEnd){ return "Latitude start must be ≤ latitude end."; }
+      if(v.zone < 1 || v.zone > 60){ return "UTM zone must be between 1 and 60."; }
+      if(v.lonStart < -180 || v.lonEnd > 180){ return "Longitude must be within [-180, 180]."; }
+      if(v.latStart < -90 || v.latEnd > 90){ return "Latitude must be within [-90, 90]."; }
+      return null;
     }
-  }
-  return Z;
-}
 
-// Gaussian kernel (1D)
-function gaussianKernel1D(sigma) {
-  if (sigma <= 0) return new Float64Array([1]);
-  const radius = Math.max(1, Math.floor(sigma * 3));
-  const size = radius*2 + 1;
-  const k = new Float64Array(size);
-  const s2 = 2*sigma*sigma;
-  let sum = 0;
-  for (let i=0;i<size;i++){
-    const x = i - radius;
-    const v = Math.exp(-(x*x)/s2);
-    k[i] = v; sum += v;
-  }
-  for (let i=0;i<size;i++) k[i] /= sum;
-  return k;
-}
-
-function convolve1DRowMajor(Z, kernel, axis='x') {
-  const ny = Z.length, nx = Z[0].length;
-  const out = Array.from({length: ny}, ()=> new Float64Array(nx));
-  const r = Math.floor(kernel.length/2);
-  if (axis === 'x') {
-    for (let j=0;j<ny;j++){
-      for (let i=0;i<nx;i++){
-        let acc=0, wsum=0;
-        for (let k=-r;k<=r;k++){
-          const ii = clamp(i+k, 0, nx-1);
-          const w = kernel[k+r];
-          const v = Z[j][ii];
-          if (!Number.isNaN(v)) { acc += w*v; wsum += w; }
-        }
-        out[j][i] = wsum>0 ? acc/wsum : NaN;
-      }
-    }
-  } else {
-    for (let j=0;j<ny;j++){
-      for (let i=0;i<nx;i++){
-        let acc=0, wsum=0;
-        for (let k=-r;k<=r;k++){
-          const jj = clamp(j+k, 0, ny-1);
-          const w = kernel[k+r];
-          const v = Z[jj][i];
-          if (!Number.isNaN(v)) { acc += w*v; wsum += w; }
-        }
-        out[j][i] = wsum>0 ? acc/wsum : NaN;
-      }
-    }
-  }
-  return out;
-}
-
-function meshgrid(xVals, yVals) {
-  const nx = xVals.length, ny = yVals.length;
-  const X = Array.from({length: ny}, ()=> new Float64Array(nx));
-  const Y = Array.from({length: ny}, ()=> new Float64Array(nx));
-  for (let j=0;j<ny;j++){
-    for (let i=0;i<nx;i++){
-      X[j][i] = xVals[i];
-      Y[j][i] = yVals[j];
-    }
-  }
-  return {X, Y};
-}
-
-function buildHeader(gridSizeX, gridSizeY, xmin, xmax, ymin, ymax) {
-  return `# Type: scattered data
-# Version: 6
-# Description: No description
-# Format: free
-# Field: 1 x
-# Field: 2 y
-# Field: 3 z meters
-# Field: 4 column
-# Field: 5 row
-# Projection: Local Rectangular
-# Units: meters
-# End:
-# Information from grid:
-# Grid_size: ${gridSizeX} x ${gridSizeY}
-# Grid_space: ${xmin},${xmax},${ymin},${ymax}
-# Scattered data: Not_available
-# Z_field: z
-# Vertical_faults: Not_available
-# History: No history
-# Z_units: meters
-`;
-}
-
-function toCSVLines(X, Y, Z){
-  const ny = Y.length, nx = X[0].length;
-  const lines = [];
-  for (let row=0; row<ny; row++){
-    for (let col=0; col<nx; col++){
-      const x = X[row][col];
-      const y = Y[row][col];
-      const z = Z[row][col];
-      const c = col+1, r = row+1;
-      lines.push(`${x.toFixed(4)} ${y.toFixed(4)} ${Number(z).toFixed(6)} ${c} ${r}`);
-    }
-  }
-  return lines.join("\n");
-}
-
-function downloadText(filename, text) {
-  const blob = new Blob([text], {type: 'text/plain'});
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-// Robust grid extent from requested lon/lat box
-function utmExtentFromBox(projLL, projUTM, lon0, lat0, lon1, lat1){
-  const corners = [
-    [lon0, lat0],[lon0, lat1],[lon1, lat1],[lon1, lat0]
-  ].map(([lo,la]) => proj4(projLL, projUTM, [lo,la]));
-  const xs = corners.map(c=>c[0]);
-  const ys = corners.map(c=>c[1]);
-  return {
-    xMin: Math.min(...xs), xMax: Math.max(...xs),
-    yMin: Math.min(...ys), yMax: Math.max(...ys),
-  };
-}
-
-function genAxis(minVal, maxVal, step){
-  require(step > 0, 'Grid step must be > 0.');
-  const vals = [];
-  const nmax = 1e6; // safety
-  let n = 0;
-  for (let v=minVal; v<=maxVal+1e-9; v+=step){
-    vals.push(v);
-    if (++n>nmax) break; // prevent runaway
-  }
-  if (vals.length === 0) { // ensure we at least have bounds
-    vals.push(minVal, maxVal);
-  } else if (vals[vals.length-1] < maxVal) {
-    vals.push(maxVal);
-  }
-  return vals;
-}
-
-async function run(params){
-  const {
-    lonStart, lonEnd, latStart, latEnd, zone, south,
-    dx, dy, sigma, idwK, idwP, sample
-  } = params;
-
-  // Basic sanity checks early to avoid silent issues
-  require(Number.isFinite(lonStart) && Number.isFinite(lonEnd), 'Invalid longitude values.');
-  require(Number.isFinite(latStart) && Number.isFinite(latEnd), 'Invalid latitude values.');
-  require(lonStart < lonEnd, 'Longitude start must be < end.');
-  require(latStart < latEnd, 'Latitude start must be < end.');
-  require(dx > 0 && dy > 0, 'Grid steps must be > 0.');
-
-  setStatus('Fetching bathymetry from API…');
-  const poly = rectPolygon(lonStart, latStart, lonEnd, latEnd);
-  const raw = await fetchBathymetry(poly, sample);
-
-  const arr = Array.isArray(raw) ? raw : (raw?.data || raw?.results || []);
-  const df = (arr || []).map(row => {
-    if (Array.isArray(row)) {
-      return { longitude: row[0], latitude: row[1], Z: row[2], distance: row[3] };
-    } else {
+    function model(){
+      const v = readValues();
+      const err = validate(v);
+      if(err){ throw new Error(err); }
       return {
-        longitude: row.longitude,
-        latitude: row.latitude,
-        Z: (row.Z ?? row.z),
-        distance: row.distance
+        coordinates: {
+          longitude: { start: v.lonStart, end: v.lonEnd },
+          latitude:  { start: v.latStart, end: v.latEnd }
+        },
+        zone: v.zone,
+        South: v.South
       };
     }
-  }).filter(r => Number.isFinite(r.longitude) && Number.isFinite(r.latitude) && Number.isFinite(r.Z));
 
-  require(df.length > 0, 'API returned no bathymetry points for this area. Try enlarging the box or lowering sample.');
+    function updatePreview(){
+      try{
+        const m = model();
+        els.preview.textContent = JSON.stringify(m, null, 2);
+        els.status.textContent = "Ready";
+        els.status.className = "status ok";
+      }catch(e){
+        els.preview.textContent = '';
+        els.status.textContent = e.message;
+        els.status.className = "status err";
+      }
+    }
 
-  setStatus('Projecting to UTM…');
-  const projUTM = utmProjDef(zone, south);
-  const projLL = '+proj=longlat +datum=WGS84 +no_defs';
+    function downloadJSON(obj, filename="parameters.json"){
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
 
-  // Points for interpolation
-  const pts = df.map(r => {
-    const [x, y] = proj4(projLL, projUTM, [r.longitude, r.latitude]);
-    return { x, y, z: r.Z };
-  });
+    // Wire up events
+    ['input','change'].forEach(ev=>{
+      [els.lonStart,els.lonEnd,els.latStart,els.latEnd,els.zone,els.south].forEach(i=>{
+        i.addEventListener(ev, updatePreview, { passive:true });
+      });
+    });
+    els.btnReset.addEventListener('click', setDefaults);
+    els.btnGenerate.addEventListener('click', ()=>{
+      try{
+        const m = model();
+        downloadJSON(m, 'parameters.json');
+        els.status.textContent = "Downloaded parameters.json";
+        els.status.className = "status ok";
+      }catch(e){
+        els.status.textContent = e.message;
+        els.status.className = "status err";
+      }
+    });
 
-  // Grid extent from requested box (robust even if points are sparse)
-  const { xMin, xMax, yMin, yMax } = utmExtentFromBox(projLL, projUTM, lonStart, latStart, lonEnd, latEnd);
-
-  const xVals = genAxis(xMin, xMax, dx);
-  const yVals = genAxis(yMin, yMax, dy);
-
-  require(xVals.length>0 && yVals.length>0, 'Failed to build grid axes.');
-
-  const {X, Y} = meshgrid(xVals, yVals);
-
-  setStatus('Interpolating (IDW)…');
-  let Z = idwInterpolate(pts, X, Y, idwK, idwP);
-
-  if (sigma > 0) {
-    setStatus('Smoothing (Gaussian)…');
-    const k = gaussianKernel1D(sigma);
-    Z = convolve1DRowMajor(Z, k, 'x');
-    Z = convolve1DRowMajor(Z, k, 'y');
-  }
-
-  const gridSizeX = xVals.length;
-  const gridSizeY = yVals.length;
-  const header = buildHeader(gridSizeX, gridSizeY, xVals[0], xVals[xVals.length-1], yVals[0], yVals[yVals.length-1]);
-
-  const body = toCSVLines(X, Y, Z);
-  const content = header + body;
-
-  const filename = 'updated_bathymetry_data_LATLONG.txt';
-  downloadText(filename, content);
-  setStatus('Done! File downloaded.');
-}
-
-form.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  try {
-    const fd = new FormData(form);
-    const params = {
-      lonStart: parseFloat(fd.get('lonStart')),
-      lonEnd: parseFloat(fd.get('lonEnd')),
-      latStart: parseFloat(fd.get('latStart')),
-      latEnd: parseFloat(fd.get('latEnd')),
-      zone: parseInt(fd.get('zone')),
-      south: !!fd.get('south'),
-      dx: parseFloat(fd.get('dx')),
-      dy: parseFloat(fd.get('dy')),
-      sigma: parseFloat(fd.get('sigma')),
-      idwK: parseInt(fd.get('idwK')),
-      idwP: parseFloat(fd.get('idwP')),
-      sample: String(fd.get('sample') || '5'),
-    };
-    setStatus('Starting…');
-    await run(params);
-  } catch (err) {
-    console.error(err);
-    setStatus('Failed: ' + (err && err.message ? err.message : err));
-  }
-});
-
-tryBtn.addEventListener('click', ()=>{ form.requestSubmit(); });
-</script>
+    // Init
+    setDefaults();
+  </script>
 </body>
 </html>
