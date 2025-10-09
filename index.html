@@ -1,3 +1,4 @@
+<!-- /index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,7 +8,7 @@
 <link rel="preconnect" href="https://unpkg.com">
 <style>
   :root { --bg:#0b1020; --card:#121a33; --muted:#9fb0d3; --text:#eaf0ff; }
-  body { margin:0; font:15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  body { margin:0; font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
          color:var(--text); background:radial-gradient(1200px 700px at 20% -10%, #1f2c5a 0, #0b1020 55%); }
   .wrap { max-width: 900px; margin: 48px auto; padding: 0 16px; }
   .card { background:var(--card); border:1px solid #24325e; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
@@ -30,19 +31,15 @@
   }
   .ghost { background:transparent; border:1px solid #2e7bff; color:#cfe0ff }
   .status { min-height: 1.4em; color:#bcd1ff; margin-top:8px }
-  .muted { color:#89a1cf }
   .foot { margin-top: 12px; font-size:13px; color:#8aa0cd }
   code { background:#0e1530; border:1px solid #24325e; padding:1px 6px; border-radius:6px }
 </style>
-<!-- proj4js for UTM projection -->
 <script src="https://unpkg.com/proj4@2.11.0/dist/proj4.js"></script>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <header>
-      <h1>Bathymetry Grid Generator (client-side)</h1>
-    </header>
+    <header><h1>Bathymetry Grid Generator (client-side)</h1></header>
     <div class="body">
       <form id="f">
         <div class="row3">
@@ -66,11 +63,10 @@
           <label>Southern Hemisphere?
             <div style="display:flex;align-items:center;gap:8px">
               <input type="checkbox" name="south" checked />
-              <span class="muted">Check for <code>South=true</code></span>
+              <span style="color:#89a1cf">Check for <code>South=true</code></span>
             </div>
           </label>
         </div>
-
         <div class="row3">
           <label>Grid step X (m)
             <input type="number" name="dx" value="200" min="10" step="10" required />
@@ -82,7 +78,6 @@
             <input type="number" name="sigma" value="5" min="0" step="1" required />
           </label>
         </div>
-
         <div class="row3">
           <label>IDW neighbors (k)
             <input type="number" name="idwK" value="8" min="1" max="32" />
@@ -99,13 +94,11 @@
             </select>
           </label>
         </div>
-
         <div class="actions">
           <button type="submit">Generate & Download</button>
           <button type="button" class="ghost" id="try">Try with current settings</button>
         </div>
         <div class="status" id="status"></div>
-
         <details class="foot">
           <summary>What this does</summary>
           <div>
@@ -126,9 +119,9 @@ const tryBtn = document.getElementById('try');
 
 function setStatus(msg) { statusEl.textContent = msg; }
 function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+function require(cond, msg){ if(!cond) throw new Error(msg); }
 
 function utmProjDef(zone, south) {
-  // WGS84 UTM zone with hemisphere
   const hemi = south ? '+south ' : '';
   return `+proj=utm +zone=${zone} ${hemi}+datum=WGS84 +units=m +no_defs`;
 }
@@ -145,20 +138,16 @@ function rectPolygon(lon0, lat0, lon1, lat1) {
 }
 
 async function fetchBathymetry(coords, sample=5) {
-  const payload = {
-    type: 'Polygon',
-    coordinates: [coords]
-  };
+  const payload = { type: 'Polygon', coordinates: [coords] };
   const encoded = encodeURIComponent(JSON.stringify(payload));
   const url = `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${sample}&jsonsrc=${encoded}`;
   const res = await fetch(url, { headers: { 'accept': 'application/json' }});
   if (!res.ok) throw new Error(`API error ${res.status}`);
-  return res.json(); // returns [{lon,lat,z,distance}, ...]
+  return res.json();
 }
 
-// K-nearest naive search (OK for moderate N)
+// K-nearest naive search
 function kNearest(points, x, y, k) {
-  // points: [{x,y,z}]
   const dists = points.map((p, i) => {
     const dx = p.x - x, dy = p.y - y;
     return { i, d: dx*dx + dy*dy };
@@ -167,8 +156,10 @@ function kNearest(points, x, y, k) {
   return dists.slice(0, k).map(o => points[o.i]);
 }
 
-// IDW interpolation
 function idwInterpolate(points, X, Y, k=8, p=2) {
+  require(Array.isArray(Y) && Y.length>0, 'Internal: empty Y grid.');
+  require(Array.isArray(X) && X.length>0 && X[0] && X[0].length>0, 'Internal: empty X grid.');
+  require(points.length>0, 'No bathymetry points available for interpolation.');
   const ny = Y.length, nx = X[0].length;
   const Z = Array.from({length: ny}, ()=> new Float64Array(nx));
   for (let j=0;j<ny;j++){
@@ -208,7 +199,6 @@ function gaussianKernel1D(sigma) {
 }
 
 function convolve1DRowMajor(Z, kernel, axis='x') {
-  // Z: Float64Array[]; axis: 'x' or 'y'
   const ny = Z.length, nx = Z[0].length;
   const out = Array.from({length: ny}, ()=> new Float64Array(nx));
   const r = Math.floor(kernel.length/2);
@@ -225,7 +215,7 @@ function convolve1DRowMajor(Z, kernel, axis='x') {
         out[j][i] = wsum>0 ? acc/wsum : NaN;
       }
     }
-  } else { // axis y
+  } else {
     for (let j=0;j<ny;j++){
       for (let i=0;i<nx;i++){
         let acc=0, wsum=0;
@@ -254,9 +244,6 @@ function meshgrid(xVals, yVals) {
   }
   return {X, Y};
 }
-
-function arrMin(a){ return Math.min(...a); }
-function arrMax(a){ return Math.max(...a); }
 
 function buildHeader(gridSizeX, gridSizeY, xmin, xmax, ymin, ymax) {
   return `# Type: scattered data
@@ -307,50 +294,86 @@ function downloadText(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+// Robust grid extent from requested lon/lat box
+function utmExtentFromBox(projLL, projUTM, lon0, lat0, lon1, lat1){
+  const corners = [
+    [lon0, lat0],[lon0, lat1],[lon1, lat1],[lon1, lat0]
+  ].map(([lo,la]) => proj4(projLL, projUTM, [lo,la]));
+  const xs = corners.map(c=>c[0]);
+  const ys = corners.map(c=>c[1]);
+  return {
+    xMin: Math.min(...xs), xMax: Math.max(...xs),
+    yMin: Math.min(...ys), yMax: Math.max(...ys),
+  };
+}
+
+function genAxis(minVal, maxVal, step){
+  require(step > 0, 'Grid step must be > 0.');
+  const vals = [];
+  const nmax = 1e6; // safety
+  let n = 0;
+  for (let v=minVal; v<=maxVal+1e-9; v+=step){
+    vals.push(v);
+    if (++n>nmax) break; // prevent runaway
+  }
+  if (vals.length === 0) { // ensure we at least have bounds
+    vals.push(minVal, maxVal);
+  } else if (vals[vals.length-1] < maxVal) {
+    vals.push(maxVal);
+  }
+  return vals;
+}
+
 async function run(params){
   const {
     lonStart, lonEnd, latStart, latEnd, zone, south,
     dx, dy, sigma, idwK, idwP, sample
   } = params;
 
+  // Basic sanity checks early to avoid silent issues
+  require(Number.isFinite(lonStart) && Number.isFinite(lonEnd), 'Invalid longitude values.');
+  require(Number.isFinite(latStart) && Number.isFinite(latEnd), 'Invalid latitude values.');
+  require(lonStart < lonEnd, 'Longitude start must be < end.');
+  require(latStart < latEnd, 'Latitude start must be < end.');
+  require(dx > 0 && dy > 0, 'Grid steps must be > 0.');
+
   setStatus('Fetching bathymetry from API…');
   const poly = rectPolygon(lonStart, latStart, lonEnd, latEnd);
   const raw = await fetchBathymetry(poly, sample);
 
-  // some APIs wrap the result
-  const arr = Array.isArray(raw) ? raw : raw.data || raw.results || [];
-
-  // now map
-  const df = arr.map(row => {
-  if (Array.isArray(row)) {
+  const arr = Array.isArray(raw) ? raw : (raw?.data || raw?.results || []);
+  const df = (arr || []).map(row => {
+    if (Array.isArray(row)) {
       return { longitude: row[0], latitude: row[1], Z: row[2], distance: row[3] };
-  } else {
+    } else {
       return {
-      longitude: row.longitude,
-      latitude: row.latitude,
-      Z: row.Z ?? row.z,
-      distance: row.distance
+        longitude: row.longitude,
+        latitude: row.latitude,
+        Z: (row.Z ?? row.z),
+        distance: row.distance
       };
-  }
-  });
+    }
+  }).filter(r => Number.isFinite(r.longitude) && Number.isFinite(r.latitude) && Number.isFinite(r.Z));
 
+  require(df.length > 0, 'API returned no bathymetry points for this area. Try enlarging the box or lowering sample.');
 
   setStatus('Projecting to UTM…');
   const projUTM = utmProjDef(zone, south);
   const projLL = '+proj=longlat +datum=WGS84 +no_defs';
+
+  // Points for interpolation
   const pts = df.map(r => {
     const [x, y] = proj4(projLL, projUTM, [r.longitude, r.latitude]);
     return { x, y, z: r.Z };
   });
 
-  const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
-  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  // Grid extent from requested box (robust even if points are sparse)
+  const { xMin, xMax, yMin, yMax } = utmExtentFromBox(projLL, projUTM, lonStart, latStart, lonEnd, latEnd);
 
-  const xVals = [];
-  for (let x=xMin; x<=xMax+1e-6; x+=dx) xVals.push(x);
-  const yVals = [];
-  for (let y=yMin; y<=yMax+1e-6; y+=dy) yVals.push(y);
+  const xVals = genAxis(xMin, xMax, dx);
+  const yVals = genAxis(yMin, yMax, dy);
+
+  require(xVals.length>0 && yVals.length>0, 'Failed to build grid axes.');
 
   const {X, Y} = meshgrid(xVals, yVals);
 
@@ -364,7 +387,6 @@ async function run(params){
     Z = convolve1DRowMajor(Z, k, 'y');
   }
 
-  // Prepare header + body (sorted row-major: row asc, col asc)
   const gridSizeX = xVals.length;
   const gridSizeY = yVals.length;
   const header = buildHeader(gridSizeX, gridSizeY, xVals[0], xVals[xVals.length-1], yVals[0], yVals[yVals.length-1]);
@@ -403,9 +425,7 @@ form.addEventListener('submit', async (e)=>{
   }
 });
 
-tryBtn.addEventListener('click', ()=>{
-  form.requestSubmit();
-});
+tryBtn.addEventListener('click', ()=>{ form.requestSubmit(); });
 </script>
 </body>
 </html>
