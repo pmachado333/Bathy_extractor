@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GEBCO Polygon API Tester</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{--blue:#003366;--blue2:#1c5991;--muted:#5c6b8a;--ok:#0f9d58;--err:#c62828}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:#f7f9fc}
+    header{background:var(--blue);color:#fff;padding:14px 16px;text-align:center}
+    main{max-width:980px;margin:18px auto;padding:0 12px}
+    .card{background:#fff;border:1px solid #e6eef7;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.06);padding:14px}
+    .row{display:grid;gap:12px}
+    @media (min-width:880px){.row{grid-template-columns:1fr 1fr}}
+    textarea,input,button{font-size:14px}
+    textarea{width:100%;min-height:220px;padding:10px;border:1px solid #d8e3f3;border-radius:10px;font-family:ui-monospace,Menlo,Consolas,monospace}
+    input[type="number"],input[type="text"]{width:100%;padding:10px;border:1px solid #d8e3f3;border-radius:10px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{border:none;background:var(--blue);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer}
+    button.secondary{background:#fff;color:var(--blue);border:1px solid #cfe1f7}
+    .muted{color:var(--muted);font-size:12px}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .status{min-height:20px;margin-top:6px}
+    .status.ok{color:var(--ok)} .status.err{color:var(--err)}
+    .pre{white-space:pre;overflow:auto;border:1px solid #e6eef7;border-radius:10px;background:#0c1b33;color:#e7eefc;padding:10px;min-height:220px}
+    .small{font-size:12px}
+  </style>
+</head>
+<body>
+<header>
+  <h1 style="margin:0;font-size:18px">GEBCO Polygon API Tester</h1>
+  <div class="small" style="opacity:.9">Paste JSON → Build polygon → Call API → See results</div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row">
+      <div>
+        <label for="jsonInput" class="muted">Input JSON</label>
+        <textarea id="jsonInput" spellcheck="false" aria-label="Input JSON"></textarea>
+        <div class="actions">
+          <input id="filePick" type="file" accept="application/json,.json" />
+          <button id="btnLoadDemo" type="button" class="secondary" title="Load demo JSON">Load Demo</button>
+        </div>
+      </div>
+      <div>
+        <label for="sample" class="muted">sample (integer string)</label>
+        <input id="sample" type="text" inputmode="numeric" value="1" />
+        <div style="margin-top:8px">
+          <div class="muted">Request URL</div>
+          <div id="reqUrl" class="mono small" style="word-break:break-all;border:1px dashed #e0e8f6;padding:8px;border-radius:8px;background:#fbfdff">—</div>
+        </div>
+        <div class="actions" style="margin-top:10px">
+          <button id="btnCall" type="button">Call API</button>
+          <button id="btnDownload" type="button" class="secondary" disabled>Download Result</button>
+        </div>
+        <div id="status" class="status muted">Idle</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <div class="muted">Response (JSON)</div>
+    <pre id="out" class="pre" aria-label="API response"></pre>
+  </section>
+</main>
+
+<script>
+  // Minimal helper to show only meaningful messages (why: faster debugging)
+  function setStatus(msg, kind){ 
+    const el = document.getElementById('status'); 
+    el.textContent = msg; 
+    el.className = 'status ' + (kind || ''); 
+  }
+
+  function parseInputJSON(text){
+    let data;
+    try { data = JSON.parse(text); } 
+    catch(e){ throw new Error('Invalid JSON: ' + e.message); }
+    const lon = data?.coordinates?.longitude;
+    const lat = data?.coordinates?.latitude;
+    if (!lon || !lat || typeof lon.start !== 'number' || typeof lon.end !== 'number' ||
+        typeof lat.start !== 'number' || typeof lat.end !== 'number'){
+      throw new Error('Missing/invalid coordinates.{longitude|latitude}.{start|end}');
+    }
+    if (lon.start > lon.end) throw new Error('Longitude start must be ≤ end.');
+    if (lat.start > lat.end) throw new Error('Latitude start must be ≤ end.');
+    return { lonStart: lon.start, lonEnd: lon.end, latStart: lat.start, latEnd: lat.end };
+  }
+
+  function buildRing({lonStart, lonEnd, latStart, latEnd}){
+    return [
+      [lonStart, latStart],
+      [lonStart, latEnd],
+      [lonEnd,   latEnd],
+      [lonEnd,   latStart],
+      [lonStart, latStart]
+    ];
+  }
+
+  function buildUrl(sample, ring){
+    const poly = { type: 'Polygon', coordinates: [ ring ] };
+    const jsonsrc = encodeURIComponent(JSON.stringify(poly));
+    return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;
+  }
+
+  async function callApi(url){
+    const res = await fetch(url, { headers: { 'accept': 'application/json' } });
+    // Why: if CORS blocks or HTTP error, throw explicit message for quick triage
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const text = await res.text(); // some APIs return text/json
+    try { return JSON.parse(text); } catch { return text; }
+  }
+
+  function pretty(v){
+    if (typeof v === 'string') return v;
+    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+  }
+
+  // Wire up UI
+  const ta = document.getElementById('jsonInput');
+  const reqUrl = document.getElementById('reqUrl');
+  const out = document.getElementById('out');
+  const sampleEl = document.getElementById('sample');
+  const dlBtn = document.getElementById('btnDownload');
+
+  function refreshUrl(){
+    try{
+      const bounds = parseInputJSON(ta.value);
+      const ring = buildRing(bounds);
+      const url = buildUrl(sampleEl.value || '1', ring);
+      reqUrl.textContent = url;
+      setStatus('Ready', 'ok');
+    }catch(e){
+      reqUrl.textContent = '—';
+      setStatus(e.message, 'err');
+    }
+  }
+
+  document.getElementById('btnLoadDemo').addEventListener('click', () => {
+    ta.value = JSON.stringify({
+      coordinates: {
+        longitude: { start: -44.87, end: -44.48 },
+        latitude:  { start: -25.85, end: -25.45 }
+      },
+      zone: 23, South: true
+    }, null, 2);
+    refreshUrl();
+  });
+
+  document.getElementById('filePick').addEventListener('change', async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const text = await f.text();
+    ta.value = text;
+    refreshUrl();
+  });
+
+  ta.addEventListener('input', refreshUrl);
+  sampleEl.addEventListener('input', refreshUrl);
+
+  document.getElementById('btnCall').addEventListener('click', async () => {
+    try{
+      setStatus('Calling API…');
+      const bounds = parseInputJSON(ta.value);
+      const url = buildUrl(sampleEl.value || '1', buildRing(bounds));
+      reqUrl.textContent = url;
+      const data = await callApi(url);
+      out.textContent = pretty(data);
+      setStatus('OK', 'ok');
+      dlBtn.disabled = false;
+      dlBtn.onclick = () => {
+        const blob = new Blob([pretty(data)], {type:'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'gebco-response.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(a.href);
+      };
+    }catch(e){
+      out.textContent = String(e?.message || e);
+      setStatus('Failed', 'err');
+      dlBtn.disabled = true;
+    }
+  });
+
+  // Initialize with demo values
+  document.getElementById('btnLoadDemo').click();
+</script>
+</body>
+</html>

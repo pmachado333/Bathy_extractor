@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GEBCO ► Transform ► Download (no-edge-touch grid)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.js"></script>
+  <style>
+    :root{--blue:#003366;--muted:#5c6b8a;--ok:#0f9d58;--err:#c62828}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:#f7f9fc}
+    header{background:var(--blue);color:#fff;padding:14px 16px;text-align:center}
+    main{max-width:1100px;margin:18px auto;padding:0 12px}
+    .card{background:#fff;border:1px solid #e6eef7;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.06);padding:14px;margin-bottom:14px}
+    .row{display:grid;gap:12px}
+    @media (min-width:980px){.row{grid-template-columns:1.1fr .9fr}}
+    textarea,input,button{font-size:14px}
+    textarea{width:100%;min-height:190px;padding:10px;border:1px solid #d8e3f3;border-radius:10px;font-family:ui-monospace,Menlo,Consolas,monospace}
+    input[type="text"],input[type="number"]{width:100%;padding:10px;border:1px solid #d8e3f3;border-radius:10px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{border:none;background:var(--blue);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;cursor:pointer}
+    button.secondary{background:#fff;color:var(--blue);border:1px solid #cfe1f7}
+    .muted{color:var(--muted);font-size:12px}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .status{min-height:20px;margin-top:6px}
+    .status.ok{color:var(--ok)} .status.err{color:var(--err)}
+    .pre{white-space:pre;overflow:auto;border:1px solid #e6eef7;border-radius:10px;background:#0c1b33;color:#e7eefc;padding:10px;min-height:190px}
+    .small{font-size:12px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:820px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <h1 style="margin:0;font-size:18px">GEBCO ► Transform ► Download</h1>
+  <div class="small" style="opacity:.9">Grid stays strictly inside; no line on bounds</div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="row">
+      <div>
+        <label for="jsonInput" class="muted">Input JSON (coordinates + zone + South)</label>
+        <textarea id="jsonInput" spellcheck="false" aria-label="Input JSON"></textarea>
+        <div class="actions">
+          <input id="filePick" type="file" accept="application/json,.json" />
+          <button id="btnLoadDemo" type="button" class="secondary">Load Demo</button>
+        </div>
+      </div>
+      <div>
+        <div class="grid">
+          <div>
+            <label for="sample" class="muted">sample (integer string)</label>
+            <input id="sample" type="text" inputmode="numeric" value="1" />
+          </div>
+          <div>
+            <label for="dxdy" class="muted">Grid spacing (m) — dx=dy</label>
+            <input id="dxdy" type="number" min="1" step="1" value="200" />
+          </div>
+          <div>
+            <label for="edgeSteps" class="muted">Edge offset (steps)</label>
+            <input id="edgeSteps" type="number" min="0" step="1" value="1" />
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="muted">Request URL</div>
+          <div id="reqUrl" class="mono small" style="word-break:break-all;border:1px dashed #e0e8f6;padding:8px;border-radius:8px;background:#fbfdff">—</div>
+        </div>
+        <div class="actions" style="margin-top:10px">
+          <button id="btnCall" type="button">Call API</button>
+          <button id="btnProcess" type="button" class="secondary" disabled>Process & Download</button>
+        </div>
+        <div id="status" class="status muted">Idle</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="grid">
+      <div>
+        <div class="muted">API Response (raw JSON)</div>
+        <pre id="apiOut" class="pre" aria-label="API response"></pre>
+      </div>
+      <div>
+        <div class="muted">Preview (first 30 rows of processed table)</div>
+        <pre id="tabOut" class="pre" aria-label="Processed preview"></pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const ta = document.getElementById('jsonInput');
+  const reqUrl = document.getElementById('reqUrl');
+  const apiOut = document.getElementById('apiOut');
+  const tabOut = document.getElementById('tabOut');
+  const sampleEl = document.getElementById('sample');
+  const dxdyEl = document.getElementById('dxdy');
+  const edgeEl = document.getElementById('edgeSteps');
+  const btnProcess = document.getElementById('btnProcess');
+
+  function setStatus(msg, kind){ const el=document.getElementById('status'); el.textContent=msg; el.className='status ' + (kind||''); }
+  function pretty(v){ if(typeof v==='string') return v; try{return JSON.stringify(v,null,2)}catch{return String(v)}}
+
+  function parseInputJSON(text){
+    let data;
+    try { data = JSON.parse(text); } catch(e){ throw new Error('Invalid JSON: '+e.message); }
+    const lon = data?.coordinates?.longitude;
+    const lat = data?.coordinates?.latitude;
+    const zone = data?.zone;
+    const South = data?.South;
+    if (!lon || !lat) throw new Error('Missing coordinates');
+    if (![lon.start,lon.end,lat.start,lat.end].every(n=>typeof n==='number')) throw new Error('Coordinates must be numbers');
+    if (zone==null || typeof zone!=='number') throw new Error('Missing zone');
+    if (typeof South!=='boolean') throw new Error('Missing South (boolean)');
+    if (lon.start>lon.end) throw new Error('Longitude start ≤ end');
+    if (lat.start>lat.end) throw new Error('Latitude start ≤ end');
+    return {lonStart:lon.start, lonEnd:lon.end, latStart:lat.start, latEnd:lat.end, zone, South};
+  }
+  function buildRing({lonStart,lonEnd,latStart,latEnd}){
+    return [
+      [lonStart, latStart],
+      [lonStart, latEnd],
+      [lonEnd,   latEnd],
+      [lonEnd,   latStart],
+      [lonStart, latStart]
+    ];
+  }
+  function buildUrl(sample, ring){
+    const poly = { type:'Polygon', coordinates:[ring] };
+    const jsonsrc = encodeURIComponent(JSON.stringify(poly));
+    return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;
+  }
+  async function callApi(url){
+    const res = await fetch(url, { headers: { accept:'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const txt = await res.text();
+    try { return JSON.parse(txt); } catch { return txt; }
+  }
+
+  // ==== math
+  function makeAxisInner(min, max, step, edgeSteps){
+    const eps = 1e-9;
+    const pad = Math.max(0, edgeSteps|0) * step;
+    const startBound = min + pad;
+    const endBound   = max - pad;
+    const vals = [];
+    if (endBound - startBound <= step + eps) {
+      // too tight → zero or one interior line; ensure none equal to bounds
+      return { vals: [], startBound, endBound };
+    }
+    for (let v = startBound; v <= endBound - step - eps; v += step) {
+      vals.push(v);
+    }
+    return { vals, startBound, endBound };
+  }
+  function knnIndices(points, qx, qy, k=12){ const d=points.map((p,i)=>[i,(p[0]-qx)**2+(p[1]-qy)**2]); d.sort((a,b)=>a[1]-b[1]); return d.slice(0,Math.min(k,d.length)).map(x=>x[0]); }
+  function idwInterpolate(points, values, qx, qy, k=12, power=2, eps=1e-12){
+    const idxs = knnIndices(points, qx, qy, k); let num=0, den=0;
+    for(const i of idxs){ const dx=points[i][0]-qx, dy=points[i][1]-qy; const d2=dx*dx+dy*dy; if (d2<eps) return values[i]; const w=1/Math.pow(d2,power/2); num+=w*values[i]; den+=w; }
+    return den>0 ? num/den : NaN;
+  }
+  function nearest(points, values, qx, qy){ let bi=-1, bd=Infinity; for(let i=0;i<points.length;i++){ const dx=points[i][0]-qx, dy=points[i][1]-qy, d=dx*dx+dy*dy; if(d<bd){bd=d;bi=i;} } return values[bi]; }
+  function gaussianKernel1D(sigma){ const r=Math.max(1,Math.floor(sigma*3)); const k=[]; let s=0, s2=2*sigma*sigma; for(let i=-r;i<=r;i++){ const v=Math.exp(-(i*i)/s2); k.push(v); s+=v;} return k.map(v=>v/s); }
+  function convolveSeparable2D(Z, W, H, kernel){
+    const r=(kernel.length-1)/2, tmp=new Float64Array(Z.length), out=new Float64Array(Z.length);
+    for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let i=-r;i<=r;i++){ const xx=Math.min(W-1,Math.max(0,x+i)); a+=kernel[i+r]*Z[y*W+xx]; } tmp[y*W+x]=a; } }
+    for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let j=-r;j<=r;j++){ const yy=Math.min(H-1,Math.max(0,y+j)); a+=kernel[j+r]*tmp[yy*W+x]; } out[y*W+x]=a; } }
+    return out;
+  }
+
+  // ==== columnar API -> rows
+  function normalizeApiData(apiData){
+    if (apiData && Array.isArray(apiData.longitude) && Array.isArray(apiData.latitude) && Array.isArray(apiData.z)) {
+      const L = Math.min(apiData.longitude.length, apiData.latitude.length, apiData.z.length);
+      const rows = new Array(L);
+      for (let i=0;i<L;i++){
+        rows[i] = {
+          longitude: +apiData.longitude[i],
+          latitude:  +apiData.latitude[i],
+          Z:         +apiData.z[i],
+          distance:  apiData.distance ? (+apiData.distance[i] || 0) : 0
+        };
+      }
+      return rows;
+    }
+    if (Array.isArray(apiData) && apiData.length){
+      if (Array.isArray(apiData[0])) return apiData.map(r=>({longitude:+r[0],latitude:+r[1],Z:+r[2],distance:+(r[3]||0)}));
+      if (typeof apiData[0]==='object') return apiData.map(o=>({longitude:+(o.longitude??o.lon??o[0]),latitude:+(o.latitude??o.lat??o[1]),Z:+(o.Z??o.z??o[2]),distance:+(o.distance??o[3]??0)}));
+    }
+    throw new Error('Unexpected API format (need longitude[], latitude[], z[]).');
+  }
+
+  function processData({ rawRows, zone, South, dxdy, edgeSteps }){
+    const rows = normalizeApiData(rawRows);
+
+    const utm = `+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`;
+    const proj = proj4('WGS84', utm);
+    rows.forEach(r => { const xy = proj.forward([r.longitude, r.latitude]); r.X=xy[0]; r.Y=xy[1]; });
+
+    const dx=dxdy, dy=dxdy;
+    const x_min = Math.min(...rows.map(r=>r.X)), x_max = Math.max(...rows.map(r=>r.X));
+    const y_min = Math.min(...rows.map(r=>r.Y)), y_max = Math.max(...rows.map(r=>r.Y));
+
+    const axX = makeAxisInner(x_min, x_max, dx, edgeSteps);
+    const axY = makeAxisInner(y_min, y_max, dy, edgeSteps);
+    const x_vals = axX.vals, y_vals = axY.vals;
+
+    const pts = rows.map(r=>[r.X,r.Y]); const vals = rows.map(r=>r.Z);
+    const W=x_vals.length, H=y_vals.length;
+
+    // If too small after margins, abort early with a helpful error
+    if (W === 0 || H === 0) {
+      throw new Error('No interior grid lines after applying edge offset. Reduce edge steps or grid spacing.');
+    }
+
+    let Zg = new Float64Array(W*H);
+    for(let j=0;j<H;j++){ const y=y_vals[j];
+      for(let i=0;i<W;i++){ const x=x_vals[i];
+        let z = idwInterpolate(pts, vals, x, y, 12, 2);
+        if (Number.isNaN(z)) z = nearest(pts, vals, x, y);
+        Zg[j*W+i]=z;
+      }
+    }
+    const kernel = gaussianKernel1D(5);
+    Zg = convolveSeparable2D(Zg, W, H, kernel);
+
+    const grid = [];
+    for(let r=0;r<H;r++){ const y=y_vals[r];
+      for(let c=0;c<W;c++){ const x=x_vals[c]; const z=Zg[r*W+c];
+        grid.push([+x.toFixed(4), +y.toFixed(4), z, c+1, r+1]);
+      }
+    }
+    grid.sort((a,b)=> (a[4]-b[4]) || (a[3]-b[3])); // by row then column
+
+    // Header uses inner bounds (NOT sample endpoints), rounded for readability
+    const x0 = +axX.startBound.toFixed(4), x1 = +axX.endBound.toFixed(4);
+    const y0 = +axY.startBound.toFixed(4), y1 = +axY.endBound.toFixed(4);
+    const header_text =
+`# Type: scattered data
+# Version: 6
+# Description: No description
+# Format: free
+# Field: 1 x
+# Field: 2 y
+# Field: 3 z meters
+# Field: 4 column
+# Field: 5 row
+# Projection: Local Rectangular
+# Units: meters
+# End:
+# Information from grid:
+# Grid_size: ${W} x ${H}
+# Grid_space: ${x0},${x1},${y0},${y1}
+# Scattered data: Not_available
+# Z_field: z
+# Vertical_faults: Not_available
+# History: No history
+# Z_units: meters
+`;
+    const csvBody = grid.map(r => `${r[0]} ${r[1]} ${r[2]} ${r[3]} ${r[4]}`).join('\n');
+    const finalText = header_text + csvBody;
+    const preview = grid.slice(0,30).map(r=>`${r[0]} ${r[1]} ${r[2].toFixed(3)} ${r[3]} ${r[4]}`).join('\n');
+
+    return { finalText, preview, dims:{x:W,y:H}, bounds:{xmin:x0,xmax:x1,ymin:y0,ymax:y1} };
+  }
+
+  // URL preview & handlers
+  function refreshUrl(){
+    try{
+      const cfg = parseInputJSON(ta.value);
+      const ring = buildRing(cfg);
+      const url = buildUrl(sampleEl.value || '1', ring);
+      reqUrl.textContent = url;
+      setStatus('Ready', 'ok');
+    }catch(e){
+      reqUrl.textContent = '—';
+      setStatus(e.message, 'err');
+    }
+  }
+
+  document.getElementById('btnLoadDemo').addEventListener('click', () => {
+    ta.value = JSON.stringify({
+      coordinates:{ longitude:{ start:-44.87, end:-44.48 }, latitude:{ start:-25.85, end:-25.45 } },
+      zone:23, South:true
+    }, null, 2);
+    sampleEl.value='1'; dxdyEl.value='200'; edgeEl.value='1'; refreshUrl();
+  });
+  document.getElementById('filePick').addEventListener('change', async (e) => {
+    const f=e.target.files?.[0]; if(!f) return; const text=await f.text(); ta.value=text; refreshUrl();
+  });
+  ta.addEventListener('input', refreshUrl);
+  sampleEl.addEventListener('input', refreshUrl);
+
+  document.getElementById('btnCall').addEventListener('click', async () => {
+    try{
+      setStatus('Calling API…');
+      const cfg = parseInputJSON(ta.value);
+      const url = buildUrl(sampleEl.value || '1', buildRing(cfg));
+      reqUrl.textContent = url;
+      const data = await callApi(url);
+      apiOut.textContent = pretty(data);
+      setStatus('API OK — ready to process', 'ok');
+      btnProcess.disabled = false;
+      btnProcess.onclick = () => doProcess(data, cfg);
+    }catch(e){
+      apiOut.textContent = String(e?.message || e);
+      tabOut.textContent = '';
+      setStatus('Failed', 'err'); btnProcess.disabled = true;
+    }
+  });
+
+  async function doProcess(apiData, cfg){
+    try{
+      setStatus('Processing…');
+      const dxdy = Math.max(1, Number(dxdyEl.value) || 200);
+      const edgeSteps = Math.max(0, Math.floor(Number(edgeEl.value) || 1));
+      const res = processData({ rawRows: apiData, zone: cfg.zone, South: cfg.South, dxdy, edgeSteps });
+      tabOut.textContent =
+        `# Grid ${res.dims.x} x ${res.dims.y}\n# X:[${res.bounds.xmin.toFixed(4)}, ${res.bounds.xmax.toFixed(4)}]  `+
+        `Y:[${res.bounds.ymin.toFixed(4)}, ${res.bounds.ymax.toFixed(4)}]\n\n` + res.preview;
+      const blob = new Blob([res.finalText], {type:'text/plain;charset=utf-8'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='updated_bathymetry_data_LATLONG';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+      setStatus('Processed & downloaded: updated_bathymetry_data_LATLONG', 'ok');
+    }catch(e){
+      tabOut.textContent = String(e?.message || e);
+      setStatus('Processing failed', 'err');
+    }
+  }
+
+  document.getElementById('btnLoadDemo').click();
+</script>
+</body>
+</html>

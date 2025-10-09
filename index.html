@@ -1,352 +1,341 @@
-<!-- /index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <title>EARTH Vision Grid ► FDPlan Input Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Parameter JSON Generator — SLB Theme</title>
-  <meta name="description" content="Generate a JSON file with coordinates, UTM zone, and hemisphere flag." />
+  <script src="https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.js"></script>
   <style>
-    :root{
-      --slb-blue:#003366;      /* primary brand blue */
-      --slb-blue-600:#1c5991;  /* accent (not official, chosen for UI states) */
-      --slb-blue-050:#f1f5fb;  /* very light background */
-      --ink:#0b1320;
-      --muted:#5c6b8a;
-      --ok:#0f9d58;
-      --err:#c62828;
-      --radius:16px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";
-      color:var(--ink);
-      background:linear-gradient(180deg,var(--slb-blue-050),#ffffff 40%);
-    }
-    header{
-      background:var(--slb-blue);
-      color:#fff;
-      padding:24px 16px;
-      text-align:center;
-    }
-    header h1{
-      margin:0 0 4px;
-      font-weight:800; letter-spacing:.2px;
-    }
-    header p{margin:0; opacity:.9}
-    main{
-      display:grid;
-      place-items:center;
-      padding:28px 16px 48px;
-    }
-    .card{
-      width:100%;
-      max-width:860px;
-      background:#fff;
-      border-radius:var(--radius);
-      box-shadow:0 8px 30px rgba(0,0,0,.08);
-      overflow:hidden;
-      border:1px solid #e6eef7;
-    }
-    .card .bar{
-      height:6px;
-      background:linear-gradient(90deg,var(--slb-blue),var(--slb-blue-600));
-    }
-    .content{
-      padding:20px;
-      display:grid;
-      grid-template-columns:1fr;
-      gap:18px;
-    }
-    @media (min-width:860px){
-      .content{grid-template-columns:1.2fr .8fr}
-    }
-    fieldset{
-      border:1px solid #e6eef7;
-      border-radius:12px;
-      padding:16px;
-    }
-    legend{
-      padding:0 8px;
-      color:var(--slb-blue);
-      font-weight:700;
-    }
-    .row{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    }
-    label{
-      display:block;
-      font-size:14px;
-      color:var(--muted);
-      margin-bottom:6px;
-    }
-    input[type="number"]{
-      width:100%;
-      padding:12px 12px;
-      border:1px solid #d8e3f3;
-      border-radius:10px;
-      font-size:16px;
-      transition:border .15s ease, box-shadow .15s ease;
-    }
-    input[type="number"]:focus{
-      outline:none;
-      border-color:var(--slb-blue-600);
-      box-shadow:0 0 0 4px rgba(28,89,145,.12);
-    }
-    .switch{
-      display:flex; align-items:center; gap:10px; margin-top:8px;
-    }
-    .actions{
-      display:flex; gap:12px; flex-wrap:wrap; margin-top:6px;
-    }
-    button{
-      appearance:none;
-      border:none;
-      background:var(--slb-blue);
-      color:#fff;
-      padding:12px 18px;
-      border-radius:12px;
-      font-weight:700;
-      cursor:pointer;
-      transition:transform .06s ease, background .15s ease, box-shadow .15s ease;
-      box-shadow:0 6px 16px rgba(0,51,102,.25);
-    }
-    button:hover{background:var(--slb-blue-600)}
-    button:active{transform:translateY(1px)}
-    button.secondary{
-      background:#fff; color:var(--slb-blue);
-      border:1px solid #cfe1f7; box-shadow:none;
-    }
-    .muted{
-      font-size:13px; color:var(--muted);
-    }
-    .preview{
-      background:#0c1b33; color:#e7eefc;
-      border-radius:12px; padding:12px; min-height:220px;
-      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,Monaco,monospace;
-      overflow:auto;
-      border:1px solid #243a67;
-      white-space:pre;
-      tab-size:2;
-    }
-    .status{
-      min-height:20px; font-size:14px; margin-top:8px;
-    }
-    .status.ok{ color:var(--ok) }
-    .status.err{ color:var(--err) }
-    footer{
-      text-align:center; padding:20px; color:var(--muted); font-size:13px;
-    }
-    .kpi{
-      display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px;
-      color:#254a7a; font-size:13px;
-    }
-    .kpi div{background:#f6f9fe;border:1px solid #e6eef7;border-radius:8px;padding:8px}
-    .kpi strong{color:#0e3770}
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    :root{--blue:#003366;--muted:#5c6b8a;--ok:#0f9d58;--err:#c62828;--bg:#f7f9fc}
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg)}
+    header{background:var(--blue);color:#fff;padding:16px;text-align:center}
+    main{max-width:980px;margin:18px auto;padding:0 12px}
+    .card{background:#fff;border:1px solid #e6eef7;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.06);padding:16px;margin-bottom:14px}
+    .grid{display:grid;gap:12px}
+    @media (min-width:900px){.grid{grid-template-columns:1fr 1fr}}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{display:block;font-size:13px;color:var(--muted);margin:4px 0 6px}
+    input[type="number"],input[type="text"]{width:100%;padding:10px;border:1px solid #d8e3f3;border-radius:10px;font-size:14px}
+    .switch{display:flex;align-items:center;gap:10px;margin-top:8px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{border:none;background:var(--blue);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer}
+    .status{min-height:20px;margin-top:6px}
+    .status.ok{color:var(--ok)} .status.err{color:var(--err)} .status.note{color:var(--muted)}
+    details{border:1px solid #e6eef7;border-radius:10px;padding:10px;background:#fbfdff}
+    summary{cursor:pointer;font-weight:700}
+    pre{white-space:pre;overflow:auto;border:1px solid #e6eef7;border-radius:10px;background:#0c1b33;color:#e7eefc;padding:10px;min-height:140px;margin-top:10px}
   </style>
 </head>
 <body>
-  <header>
-    <h1>Parameter JSON Generator</h1>
-    <p>Interface to build & download your Bathymetry input JSON file.</p>
-  </header>
-  <main>
-    <section class="card" role="region" aria-labelledby="form-title">
-      <div class="bar" aria-hidden="true"></div>
-      <div class="content">
-        <!-- Left: Form -->
-        <div>
-          <h2 id="form-title" class="sr-only">Parameters</h2>
+<header>
+  <h1 style="margin:0;font-size:20px">GEBCO ► Run & Download</h1>
+  <div style="opacity:.9">by Patrick Machado</div>
+</header>
 
-          <fieldset>
-            <legend>Coordinates</legend>
-            <div class="row" style="margin-bottom:12px">
-              <div>
-                <label for="lonStart">Longitude Start</label>
-                <input id="lonStart" name="lonStart" type="number" step="0.01" required />
-              </div>
-              <div>
-                <label for="lonEnd">Longitude End</label>
-                <input id="lonEnd" name="lonEnd" type="number" step="0.01" required />
-              </div>
-            </div>
-            <div class="row">
-              <div>
-                <label for="latStart">Latitude Start</label>
-                <input id="latStart" name="latStart" type="number" step="0.01" required />
-              </div>
-              <div>
-                <label for="latEnd">Latitude End</label>
-                <input id="latEnd" name="latEnd" type="number" step="0.01" required />
-              </div>
-            </div>
-          </fieldset>
-
-          <fieldset style="margin-top:12px">
-            <legend>Projection</legend>
-            <div class="row">
-              <div>
-                <label for="zone">UTM Zone</label>
-                <input id="zone" name="zone" type="number" step="1" min="1" max="60" required />
-              </div>
-              <div class="switch">
-                <input id="south" name="south" type="checkbox" />
-                <label for="south">South Hemisphere (<span class="muted">sets <code>South</code> boolean</span>)</label>
-              </div>
-            </div>
-            <div class="kpi" aria-hidden="true">
-              <div>Hint: <strong>Zone 23S</strong> covers parts of Brazil.</div>
-              <div>Checked = <strong>true</strong>, Unchecked = <strong>false</strong></div>
-            </div>
-          </fieldset>
-
-          <div class="actions">
-            <button id="btnGenerate" type="button" title="Generate and download JSON">Generate JSON</button>
-            <button id="btnReset" class="secondary" type="button" title="Reset to defaults">Reset</button>
-            <span id="status" class="status" role="status" aria-live="polite"></span>
+<main>
+  <section class="card">
+    <div class="grid">
+      <!-- Coordinates -->
+      <div>
+        <h3 style="margin:0 0 8px">Coordinates</h3>
+        <div class="row2">
+          <div>
+            <label for="lonStart">Longitude start</label>
+            <input id="lonStart" type="number" step="0.0001" />
           </div>
-          <p class="muted">File name: <code>parameters.json</code></p>
+          <div>
+            <label for="lonEnd">Longitude end</label>
+            <input id="lonEnd" type="number" step="0.0001" />
+          </div>
         </div>
-
-        <!-- Right: Preview -->
-        <div>
-          <h3 style="margin:0 0 8px;color:var(--slb-blue)">Preview</h3>
-          <pre id="preview" class="preview" aria-label="JSON preview"></pre>
+        <div class="row2">
+          <div>
+            <label for="latStart">Latitude start</label>
+            <input id="latStart" type="number" step="0.0001" />
+          </div>
+          <div>
+            <label for="latEnd">Latitude end</label>
+            <input id="latEnd" type="number" step="0.0001" />
+          </div>
         </div>
       </div>
-    </section>
-  </main>
-  <footer>
-    Built with ❤️ in SLB blues. Primary color #003366.
-  </footer>
 
-  <script>
-    // Default values (from your request)
-    const defaults = {
-      coordinates: {
-        longitude: { start: -44.87, end: -44.48 },
-        latitude:  { start: -25.85, end: -25.45 }
-      },
-      zone: 23,
-      South: true
-    };
+      <!-- Projection & Grid -->
+      <div>
+        <h3 style="margin:0 0 8px">Projection & Grid</h3>
+        <div class="row2">
+          <div>
+            <label for="zone">UTM Zone</label>
+            <input id="zone" type="number" min="1" max="60" step="1" />
+          </div>
+          <div class="switch" style="margin-top:28px">
+            <input id="south" type="checkbox" />
+            <label for="south" style="margin:0">South Hemisphere</label>
+          </div>
+        </div>
+        <div class="row2" style="margin-top:8px">
+          <div>
+            <label for="sample">sample (integer string)</label>
+            <input id="sample" type="text" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="dxdy">Grid spacing (m) — dx=dy</label>
+            <input id="dxdy" type="number" min="1" step="1" />
+          </div>
+        </div>
+        <div style="margin-top:8px;max-width:240px">
+          <label for="edgeSteps">Edge offset (steps)</label>
+          <input id="edgeSteps" type="number" min="0" step="1" />
+        </div>
+      </div>
+    </div>
 
-    const els = {
-      lonStart: document.getElementById('lonStart'),
-      lonEnd:   document.getElementById('lonEnd'),
-      latStart: document.getElementById('latStart'),
-      latEnd:   document.getElementById('latEnd'),
-      zone:     document.getElementById('zone'),
-      south:    document.getElementById('south'),
-      preview:  document.getElementById('preview'),
-      status:   document.getElementById('status'),
-      btnGenerate: document.getElementById('btnGenerate'),
-      btnReset: document.getElementById('btnReset'),
-    };
+    <div class="actions">
+      <button id="btnRun" type="button" title="Call API and download file">Run — Call API & Download</button>
+      <span id="status" class="status note">Idle</span>
+    </div>
+  </section>
 
-    function setDefaults(){
-      els.lonStart.value = defaults.coordinates.longitude.start;
-      els.lonEnd.value   = defaults.coordinates.longitude.end;
-      els.latStart.value = defaults.coordinates.latitude.start;
-      els.latEnd.value   = defaults.coordinates.latitude.end;
-      els.zone.value     = defaults.zone;
-      els.south.checked  = defaults.South;
-      updatePreview(); // sync preview
-      clearStatus();
-    }
+  <!-- Collapsed debug/preview -->
+  <section class="card">
+    <details>
+      <summary>API Response (raw JSON)</summary>
+      <pre id="apiOut" aria-label="API response"></pre>
+    </details>
+    <details style="margin-top:10px">
+      <summary>Processed Preview (first 30 rows)</summary>
+      <pre id="tabOut" aria-label="Processed preview"></pre>
+    </details>
+  </section>
+</main>
 
-    function clearStatus(){ els.status.textContent=''; els.status.className='status'; }
+<script>
+  // Defaults (as requested)
+  const defaults = {
+    coordinates:{ longitude:{start:-44.87, end:-44.48}, latitude:{start:-25.85, end:-25.45} },
+    zone:23, South:true, sample:"1", dxdy:200, edgeSteps:3
+  };
 
-    function readValues(){
-      // Important: coerce to numbers, handle NaN
-      const lonStart = Number(els.lonStart.value);
-      const lonEnd   = Number(els.lonEnd.value);
-      const latStart = Number(els.latStart.value);
-      const latEnd   = Number(els.latEnd.value);
-      const zone     = Number(els.zone.value);
-      const South    = !!els.south.checked;
+  // Elements
+  const els = {
+    lonStart: document.getElementById('lonStart'),
+    lonEnd: document.getElementById('lonEnd'),
+    latStart: document.getElementById('latStart'),
+    latEnd: document.getElementById('latEnd'),
+    zone: document.getElementById('zone'),
+    south: document.getElementById('south'),
+    sample: document.getElementById('sample'),
+    dxdy: document.getElementById('dxdy'),
+    edge: document.getElementById('edgeSteps'),
+    btnRun: document.getElementById('btnRun'),
+    status: document.getElementById('status'),
+    apiOut: document.getElementById('apiOut'),
+    tabOut: document.getElementById('tabOut')
+  };
 
-      return { lonStart, lonEnd, latStart, latEnd, zone, South };
-    }
+  function setDefaults(){
+    els.lonStart.value = defaults.coordinates.longitude.start;
+    els.lonEnd.value   = defaults.coordinates.longitude.end;
+    els.latStart.value = defaults.coordinates.latitude.start;
+    els.latEnd.value   = defaults.coordinates.latitude.end;
+    els.zone.value     = defaults.zone;
+    els.south.checked  = defaults.South;
+    els.sample.value   = defaults.sample;
+    els.dxdy.value     = defaults.dxdy;
+    els.edge.value     = defaults.edgeSteps;
+  }
+  function setStatus(msg, kind){ els.status.textContent = msg; els.status.className = 'status ' + (kind||'note'); }
+  function pretty(v){ if(typeof v==='string') return v; try{return JSON.stringify(v,null,2)}catch{return String(v)}}
 
-    function validate(v){
-      // Why: prevent obvious mistakes before writing files
-      if([v.lonStart,v.lonEnd,v.latStart,v.latEnd,v.zone].some(n => Number.isNaN(n))){
-        return "All numeric fields must be valid numbers.";
+  // Input → cfg
+  function getCfg(){
+    const lonStart = Number(els.lonStart.value);
+    const lonEnd   = Number(els.lonEnd.value);
+    const latStart = Number(els.latStart.value);
+    const latEnd   = Number(els.latEnd.value);
+    const zone     = Number(els.zone.value);
+    const South    = !!els.south.checked;
+    if ([lonStart,lonEnd,latStart,latEnd,zone].some(n=>Number.isNaN(n))) throw new Error('All fields must be numbers.');
+    if (lonStart>lonEnd) throw new Error('Longitude start ≤ end.');
+    if (latStart>latEnd) throw new Error('Latitude start ≤ end.');
+    if (zone<1 || zone>60) throw new Error('UTM zone must be 1..60.');
+    return {lonStart,lonEnd,latStart,latEnd,zone,South};
+  }
+
+  // Build polygon URL
+  function buildUrl(sample, ring){
+    const poly = { type:'Polygon', coordinates:[ ring ] };
+    const jsonsrc = encodeURIComponent(JSON.stringify(poly));
+    return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;
+  }
+  function buildRing({lonStart,lonEnd,latStart,latEnd}){
+    return [
+      [lonStart, latStart],
+      [lonStart, latEnd],
+      [lonEnd,   latEnd],
+      [lonEnd,   latStart],
+      [lonStart, latStart]
+    ];
+  }
+
+  async function callApi(url){
+    const res = await fetch(url, { headers: { accept:'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const txt = await res.text();
+    try { return JSON.parse(txt); } catch { return txt; }
+  }
+
+  // ----- math & processing (same as previous, inner-bounds grid) -----
+  function makeAxisInner(min, max, step, edgeSteps){
+    const eps=1e-9, pad=Math.max(0, edgeSteps|0)*step;
+    const startBound=min+pad, endBound=max-pad;
+    const vals=[];
+    if (endBound - startBound <= step + eps) return { vals:[], startBound, endBound };
+    for(let v=startBound; v<=endBound - step - eps; v+=step) vals.push(v);
+    return { vals, startBound, endBound };
+  }
+  function knnIndices(points, qx, qy, k=12){ const d=points.map((p,i)=>[i,(p[0]-qx)**2+(p[1]-qy)**2]); d.sort((a,b)=>a[1]-b[1]); return d.slice(0,Math.min(k,d.length)).map(x=>x[0]); }
+  function idwInterpolate(points, values, qx, qy, k=12, power=2, eps=1e-12){
+    const idxs = knnIndices(points, qx, qy, k); let num=0, den=0;
+    for(const i of idxs){ const dx=points[i][0]-qx, dy=points[i][1]-qy; const d2=dx*dx+dy*dy; if (d2<eps) return values[i]; const w=1/Math.pow(d2,power/2); num+=w*values[i]; den+=w; }
+    return den>0 ? num/den : NaN;
+  }
+  function nearest(points, values, qx, qy){ let bi=-1, bd=Infinity; for(let i=0;i<points.length;i++){ const dx=points[i][0]-qx, dy=points[i][1]-qy, d=dx*dx+dy*dy; if(d<bd){bd=d;bi=i;} } return values[bi]; }
+  function gaussianKernel1D(sigma){ const r=Math.max(1,Math.floor(sigma*3)); const k=[]; let s=0, s2=2*sigma*sigma; for(let i=-r;i<=r;i++){ const v=Math.exp(-(i*i)/s2); k.push(v); s+=v;} return k.map(v=>v/s); }
+  function convolveSeparable2D(Z, W, H, kernel){
+    const r=(kernel.length-1)/2, tmp=new Float64Array(Z.length), out=new Float64Array(Z.length);
+    for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let i=-r;i<=r;i++){ const xx=Math.min(W-1,Math.max(0,x+i)); a+=kernel[i+r]*Z[y*W+xx]; } tmp[y*W+x]=a; } }
+    for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let j=-r;j<=r;j++){ const yy=Math.min(H-1,Math.max(0,y+j)); a+=kernel[j+r]*tmp[yy*W+x]; } out[y*W+x]=a; } }
+    return out;
+  }
+
+  function normalizeApiData(apiData){
+    if (apiData && Array.isArray(apiData.longitude) && Array.isArray(apiData.latitude) && Array.isArray(apiData.z)) {
+      const L = Math.min(apiData.longitude.length, apiData.latitude.length, apiData.z.length);
+      const rows = new Array(L);
+      for (let i=0;i<L;i++){
+        rows[i] = {
+          longitude: +apiData.longitude[i],
+          latitude:  +apiData.latitude[i],
+          Z:         +apiData.z[i],
+          distance:  apiData.distance ? (+apiData.distance[i] || 0) : 0
+        };
       }
-      if(v.lonStart > v.lonEnd){ return "Longitude start must be ≤ longitude end."; }
-      if(v.latStart > v.latEnd){ return "Latitude start must be ≤ latitude end."; }
-      if(v.zone < 1 || v.zone > 60){ return "UTM zone must be between 1 and 60."; }
-      if(v.lonStart < -180 || v.lonEnd > 180){ return "Longitude must be within [-180, 180]."; }
-      if(v.latStart < -90 || v.latEnd > 90){ return "Latitude must be within [-90, 90]."; }
-      return null;
+      return rows;
+    }
+    if (Array.isArray(apiData) && apiData.length){
+      if (Array.isArray(apiData[0])) return apiData.map(r=>({longitude:+r[0],latitude:+r[1],Z:+r[2],distance:+(r[3]||0)}));
+      if (typeof apiData[0]==='object') return apiData.map(o=>({longitude:+(o.longitude??o.lon??o[0]),latitude:+(o.latitude??o.lat??o[1]),Z:+(o.Z??o.z??o[2]),distance:+(o.distance??o[3]??0)}));
+    }
+    throw new Error('Unexpected API format (need longitude[], latitude[], z[]).');
+  }
+
+  function processData({ apiData, zone, South, dxdy, edgeSteps }){
+    const rows = normalizeApiData(apiData);
+
+    const utm = `+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`;
+    const proj = proj4('WGS84', utm);
+    rows.forEach(r => { const xy = proj.forward([r.longitude, r.latitude]); r.X=xy[0]; r.Y=xy[1]; });
+
+    const dx=dxdy, dy=dxdy;
+    const x_min = Math.min(...rows.map(r=>r.X)), x_max = Math.max(...rows.map(r=>r.X));
+    const y_min = Math.min(...rows.map(r=>r.Y)), y_max = Math.max(...rows.map(r=>r.Y));
+    const axX = makeAxisInner(x_min, x_max, dx, edgeSteps);
+    const axY = makeAxisInner(y_min, y_max, dy, edgeSteps);
+    const x_vals = axX.vals, y_vals = axY.vals;
+
+    if (x_vals.length===0 || y_vals.length===0) {
+      throw new Error('No interior grid after edge offset. Reduce offset or spacing.');
     }
 
-    function model(){
-      const v = readValues();
-      const err = validate(v);
-      if(err){ throw new Error(err); }
-      return {
-        coordinates: {
-          longitude: { start: v.lonStart, end: v.lonEnd },
-          latitude:  { start: v.latStart, end: v.latEnd }
-        },
-        zone: v.zone,
-        South: v.South
-      };
-    }
-
-    function updatePreview(){
-      try{
-        const m = model();
-        els.preview.textContent = JSON.stringify(m, null, 2);
-        els.status.textContent = "Ready";
-        els.status.className = "status ok";
-      }catch(e){
-        els.preview.textContent = '';
-        els.status.textContent = e.message;
-        els.status.className = "status err";
+    const pts = rows.map(r=>[r.X,r.Y]); const vals = rows.map(r=>r.Z);
+    const W=x_vals.length, H=y_vals.length;
+    let Zg = new Float64Array(W*H);
+    for(let j=0;j<H;j++){ const y=y_vals[j];
+      for(let i=0;i<W;i++){ const x=x_vals[i];
+        let z = idwInterpolate(pts, vals, x, y, 12, 2);
+        if (Number.isNaN(z)) z = nearest(pts, vals, x, y);
+        Zg[j*W+i]=z;
       }
     }
+    const kernel = gaussianKernel1D(5);
+    Zg = convolveSeparable2D(Zg, W, H, kernel);
 
-    function downloadJSON(obj, filename="parameters.json"){
-      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+    const grid = [];
+    for(let r=0;r<H;r++){ const y=y_vals[r];
+      for(let c=0;c<W;c++){ const x=x_vals[c]; const z=Zg[r*W+c];
+        grid.push([+x.toFixed(4), +y.toFixed(4), z, c+1, r+1]);
+      }
     }
+    grid.sort((a,b)=> (a[4]-b[4]) || (a[3]-b[3]));
 
-    // Wire up events
-    ['input','change'].forEach(ev=>{
-      [els.lonStart,els.lonEnd,els.latStart,els.latEnd,els.zone,els.south].forEach(i=>{
-        i.addEventListener(ev, updatePreview, { passive:true });
+    const x0 = +axX.startBound.toFixed(4), x1 = +axX.endBound.toFixed(4);
+    const y0 = +axY.startBound.toFixed(4), y1 = +axY.endBound.toFixed(4);
+    const header =
+`# Type: scattered data
+# Version: 6
+# Description: No description
+# Format: free
+# Field: 1 x
+# Field: 2 y
+# Field: 3 z meters
+# Field: 4 column
+# Field: 5 row
+# Projection: Local Rectangular
+# Units: meters
+# End:
+# Information from grid:
+# Grid_size: ${W} x ${H}
+# Grid_space: ${x0},${x1},${y0},${y1}
+# Scattered data: Not_available
+# Z_field: z
+# Vertical_faults: Not_available
+# History: No history
+# Z_units: meters
+`;
+    const csvBody = grid.map(r => `${r[0]} ${r[1]} ${r[2]} ${r[3]} ${r[4]}`).join('\n');
+    const finalText = header + csvBody;
+    const preview = grid.slice(0,30).map(r=>`${r[0]} ${r[1]} ${r[2].toFixed(3)} ${r[3]} ${r[4]}`).join('\n');
+
+    return { finalText, preview, dims:{x:W,y:H}, bounds:{xmin:x0,xmax:x1,ymin:y0,ymax:y1} };
+  }
+
+  async function runOnce(){
+    try{
+      setStatus('Calling API…');
+      const cfg = getCfg();
+      const ring = buildRing(cfg);
+      const url  = buildUrl(els.sample.value || '1', ring);
+      const apiData = await callApi(url);
+      els.apiOut.textContent = pretty(apiData);
+
+      setStatus('Processing…');
+      const res = processData({
+        apiData,
+        zone: cfg.zone,
+        South: cfg.South,
+        dxdy: Math.max(1, Number(els.dxdy.value) || 200),
+        edgeSteps: Math.max(0, Math.floor(Number(els.edge.value) || 3))
       });
-    });
-    els.btnReset.addEventListener('click', setDefaults);
-    els.btnGenerate.addEventListener('click', ()=>{
-      try{
-        const m = model();
-        downloadJSON(m, 'parameters.json');
-        els.status.textContent = "Downloaded parameters.json";
-        els.status.className = "status ok";
-      }catch(e){
-        els.status.textContent = e.message;
-        els.status.className = "status err";
-      }
-    });
 
-    // Init
-    setDefaults();
-  </script>
+      els.tabOut.textContent =
+        `# Grid ${res.dims.x} x ${res.dims.y}\n` +
+        `# X:[${res.bounds.xmin.toFixed(4)}, ${res.bounds.xmax.toFixed(4)}]  ` +
+        `Y:[${res.bounds.ymin.toFixed(4)}, ${res.bounds.ymax.toFixed(4)}]\n\n` +
+        res.preview;
+
+      const blob = new Blob([res.finalText], {type:'text/plain;charset=utf-8'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='updated_bathymetry_data_LATLONG';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+
+      setStatus('Done. File downloaded: updated_bathymetry_data_LATLONG', 'ok');
+    }catch(e){
+      setStatus(e?.message || String(e), 'err');
+    }
+  }
+
+  els.btnRun.addEventListener('click', runOnce);
+  setDefaults(); // init
+</script>
 </body>
 </html>
