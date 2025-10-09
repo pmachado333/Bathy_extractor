@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bathymetry Grid Generator</title>
+<link rel="preconnect" href="https://unpkg.com">
+<style>
+  :root { --bg:#0b1020; --card:#121a33; --muted:#9fb0d3; --text:#eaf0ff; }
+  body { margin:0; font:15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+         color:var(--text); background:radial-gradient(1200px 700px at 20% -10%, #1f2c5a 0, #0b1020 55%); }
+  .wrap { max-width: 900px; margin: 48px auto; padding: 0 16px; }
+  .card { background:var(--card); border:1px solid #24325e; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  header { padding:20px 22px; border-bottom:1px solid #24325e; display:flex; align-items:center; gap:14px }
+  header h1 { font-size:18px; margin:0; letter-spacing:.2px }
+  .body { padding: 18px 22px 22px }
+  form { display:grid; gap:14px; }
+  .row { display:grid; gap:14px; grid-template-columns: repeat(2,1fr); }
+  .row3 { display:grid; gap:14px; grid-template-columns: repeat(3,1fr); }
+  label { display:grid; gap:6px; color:var(--muted); font-weight:500; }
+  input[type="number"], input[type="text"], select {
+    background:#0e1530; border:1px solid #24325e; color:var(--text);
+    border-radius: 10px; padding:10px 12px;
+  }
+  input[type="checkbox"] { transform: scale(1.2); }
+  .actions { display:flex; gap:10px; align-items:center; }
+  button {
+    background:#2e7bff; border:0; color:white; padding:10px 14px; border-radius: 10px; cursor:pointer;
+    font-weight:600;
+  }
+  .ghost { background:transparent; border:1px solid #2e7bff; color:#cfe0ff }
+  .status { min-height: 1.4em; color:#bcd1ff; margin-top:8px }
+  .muted { color:#89a1cf }
+  .foot { margin-top: 12px; font-size:13px; color:#8aa0cd }
+  code { background:#0e1530; border:1px solid #24325e; padding:1px 6px; border-radius:6px }
+</style>
+<!-- proj4js for UTM projection -->
+<script src="https://unpkg.com/proj4@2.11.0/dist/proj4.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <header>
+      <h1>Bathymetry Grid Generator (client-side)</h1>
+    </header>
+    <div class="body">
+      <form id="f">
+        <div class="row3">
+          <label>Longitude start
+            <input type="number" step="0.000001" name="lonStart" value="-44.87" required />
+          </label>
+          <label>Longitude end
+            <input type="number" step="0.000001" name="lonEnd" value="-44.48" required />
+          </label>
+          <label>Zone (UTM)
+            <input type="number" name="zone" value="23" required />
+          </label>
+        </div>
+        <div class="row3">
+          <label>Latitude start
+            <input type="number" step="0.000001" name="latStart" value="-25.85" required />
+          </label>
+          <label>Latitude end
+            <input type="number" step="0.000001" name="latEnd" value="-25.45" required />
+          </label>
+          <label>Southern Hemisphere?
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" name="south" checked />
+              <span class="muted">Check for <code>South=true</code></span>
+            </div>
+          </label>
+        </div>
+
+        <div class="row3">
+          <label>Grid step X (m)
+            <input type="number" name="dx" value="200" min="10" step="10" required />
+          </label>
+          <label>Grid step Y (m)
+            <input type="number" name="dy" value="200" min="10" step="10" required />
+          </label>
+          <label>Smoothing (sigma)
+            <input type="number" name="sigma" value="5" min="0" step="1" required />
+          </label>
+        </div>
+
+        <div class="row3">
+          <label>IDW neighbors (k)
+            <input type="number" name="idwK" value="8" min="1" max="32" />
+          </label>
+          <label>IDW power (p)
+            <input type="number" name="idwP" value="2" min="1" max="6" step="0.5" />
+          </label>
+          <label>Sample density (API)
+            <select name="sample">
+              <option value="1">1 (dense)</option>
+              <option value="3">3</option>
+              <option value="5" selected>5 (default)</option>
+              <option value="10">10 (sparse)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Generate & Download</button>
+          <button type="button" class="ghost" id="try">Try with current settings</button>
+        </div>
+        <div class="status" id="status"></div>
+
+        <details class="foot">
+          <summary>What this does</summary>
+          <div>
+            Calls the bathymetry API for your lon/lat box, converts to UTM (<code>zone</code> + <code>South</code>),
+            builds a regular grid (<code>dx/dy</code>), interpolates depths with IDW, applies a Gaussian smooth, then
+            downloads a text file with the header + data in your original format.
+          </div>
+        </details>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const form = document.getElementById('f');
+const tryBtn = document.getElementById('try');
+
+function setStatus(msg) { statusEl.textContent = msg; }
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+function utmProjDef(zone, south) {
+  // WGS84 UTM zone with hemisphere
+  const hemi = south ? '+south ' : '';
+  return `+proj=utm +zone=${zone} ${hemi}+datum=WGS84 +units=m +no_defs`;
+}
+
+// Build polygon coords in required order (clockwise rectangle)
+function rectPolygon(lon0, lat0, lon1, lat1) {
+  return [
+    [lon0, lat0],
+    [lon0, lat1],
+    [lon1, lat1],
+    [lon1, lat0],
+    [lon0, lat0],
+  ];
+}
+
+async function fetchBathymetry(coords, sample=5) {
+  const payload = {
+    type: 'Polygon',
+    coordinates: [coords]
+  };
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  const url = `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${sample}&jsonsrc=${encoded}`;
+  const res = await fetch(url, { headers: { 'accept': 'application/json' }});
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json(); // returns [{lon,lat,z,distance}, ...]
+}
+
+// K-nearest naive search (OK for moderate N)
+function kNearest(points, x, y, k) {
+  // points: [{x,y,z}]
+  const dists = points.map((p, i) => {
+    const dx = p.x - x, dy = p.y - y;
+    return { i, d: dx*dx + dy*dy };
+  });
+  dists.sort((a,b)=>a.d-b.d);
+  return dists.slice(0, k).map(o => points[o.i]);
+}
+
+// IDW interpolation
+function idwInterpolate(points, X, Y, k=8, p=2) {
+  const ny = Y.length, nx = X[0].length;
+  const Z = Array.from({length: ny}, ()=> new Float64Array(nx));
+  for (let j=0;j<ny;j++){
+    for (let i=0;i<nx;i++){
+      const x = X[j][i], y = Y[j][i];
+      const neigh = kNearest(points, x, y, Math.min(k, points.length));
+      let num = 0, den = 0, exact = null;
+      for (const q of neigh){
+        const dx = x - q.x, dy = y - q.y;
+        const d = Math.hypot(dx, dy);
+        if (d === 0) { exact = q.z; break; }
+        const w = 1 / Math.pow(d, p);
+        num += w * q.z;
+        den += w;
+      }
+      Z[j][i] = (exact !== null) ? exact : (den > 0 ? num/den : NaN);
+    }
+  }
+  return Z;
+}
+
+// Gaussian kernel (1D)
+function gaussianKernel1D(sigma) {
+  if (sigma <= 0) return new Float64Array([1]);
+  const radius = Math.max(1, Math.floor(sigma * 3));
+  const size = radius*2 + 1;
+  const k = new Float64Array(size);
+  const s2 = 2*sigma*sigma;
+  let sum = 0;
+  for (let i=0;i<size;i++){
+    const x = i - radius;
+    const v = Math.exp(-(x*x)/s2);
+    k[i] = v; sum += v;
+  }
+  for (let i=0;i<size;i++) k[i] /= sum;
+  return k;
+}
+
+function convolve1DRowMajor(Z, kernel, axis='x') {
+  // Z: Float64Array[]; axis: 'x' or 'y'
+  const ny = Z.length, nx = Z[0].length;
+  const out = Array.from({length: ny}, ()=> new Float64Array(nx));
+  const r = Math.floor(kernel.length/2);
+  if (axis === 'x') {
+    for (let j=0;j<ny;j++){
+      for (let i=0;i<nx;i++){
+        let acc=0, wsum=0;
+        for (let k=-r;k<=r;k++){
+          const ii = clamp(i+k, 0, nx-1);
+          const w = kernel[k+r];
+          const v = Z[j][ii];
+          if (!Number.isNaN(v)) { acc += w*v; wsum += w; }
+        }
+        out[j][i] = wsum>0 ? acc/wsum : NaN;
+      }
+    }
+  } else { // axis y
+    for (let j=0;j<ny;j++){
+      for (let i=0;i<nx;i++){
+        let acc=0, wsum=0;
+        for (let k=-r;k<=r;k++){
+          const jj = clamp(j+k, 0, ny-1);
+          const w = kernel[k+r];
+          const v = Z[jj][i];
+          if (!Number.isNaN(v)) { acc += w*v; wsum += w; }
+        }
+        out[j][i] = wsum>0 ? acc/wsum : NaN;
+      }
+    }
+  }
+  return out;
+}
+
+function meshgrid(xVals, yVals) {
+  const nx = xVals.length, ny = yVals.length;
+  const X = Array.from({length: ny}, ()=> new Float64Array(nx));
+  const Y = Array.from({length: ny}, ()=> new Float64Array(nx));
+  for (let j=0;j<ny;j++){
+    for (let i=0;i<nx;i++){
+      X[j][i] = xVals[i];
+      Y[j][i] = yVals[j];
+    }
+  }
+  return {X, Y};
+}
+
+function arrMin(a){ return Math.min(...a); }
+function arrMax(a){ return Math.max(...a); }
+
+function buildHeader(gridSizeX, gridSizeY, xmin, xmax, ymin, ymax) {
+  return `# Type: scattered data
+# Version: 6
+# Description: No description
+# Format: free
+# Field: 1 x
+# Field: 2 y
+# Field: 3 z meters
+# Field: 4 column
+# Field: 5 row
+# Projection: Local Rectangular
+# Units: meters
+# End:
+# Information from grid:
+# Grid_size: ${gridSizeX} x ${gridSizeY}
+# Grid_space: ${xmin},${xmax},${ymin},${ymax}
+# Scattered data: Not_available
+# Z_field: z
+# Vertical_faults: Not_available
+# History: No history
+# Z_units: meters
+`;
+}
+
+function toCSVLines(X, Y, Z){
+  const ny = Y.length, nx = X[0].length;
+  const lines = [];
+  for (let row=0; row<ny; row++){
+    for (let col=0; col<nx; col++){
+      const x = X[row][col];
+      const y = Y[row][col];
+      const z = Z[row][col];
+      const c = col+1, r = row+1;
+      lines.push(`${x.toFixed(4)} ${y.toFixed(4)} ${Number(z).toFixed(6)} ${c} ${r}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+function downloadText(filename, text) {
+  const blob = new Blob([text], {type: 'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function run(params){
+  const {
+    lonStart, lonEnd, latStart, latEnd, zone, south,
+    dx, dy, sigma, idwK, idwP, sample
+  } = params;
+
+  setStatus('Fetching bathymetry from API…');
+  const poly = rectPolygon(lonStart, latStart, lonEnd, latEnd);
+  const raw = await fetchBathymetry(poly, sample);
+
+  // raw: array of arrays OR objects; normalize to objects with keys
+  // The Python code expects [lon, lat, Z, distance] columns.
+  // The API returns an array of arrays in this order.
+  const df = raw.map(row => {
+    // Support both shapes just in case
+    if (Array.isArray(row)) {
+      return { longitude: row[0], latitude: row[1], Z: row[2], distance: row[3] };
+    } else {
+      return { longitude: row.longitude, latitude: row.latitude, Z: row.Z ?? row.z, distance: row.distance };
+    }
+  });
+
+  setStatus('Projecting to UTM…');
+  const projUTM = utmProjDef(zone, south);
+  const projLL = '+proj=longlat +datum=WGS84 +no_defs';
+  const pts = df.map(r => {
+    const [x, y] = proj4(projLL, projUTM, [r.longitude, r.latitude]);
+    return { x, y, z: r.Z };
+  });
+
+  const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+
+  const xVals = [];
+  for (let x=xMin; x<=xMax+1e-6; x+=dx) xVals.push(x);
+  const yVals = [];
+  for (let y=yMin; y<=yMax+1e-6; y+=dy) yVals.push(y);
+
+  const {X, Y} = meshgrid(xVals, yVals);
+
+  setStatus('Interpolating (IDW)…');
+  let Z = idwInterpolate(pts, X, Y, idwK, idwP);
+
+  if (sigma > 0) {
+    setStatus('Smoothing (Gaussian)…');
+    const k = gaussianKernel1D(sigma);
+    Z = convolve1DRowMajor(Z, k, 'x');
+    Z = convolve1DRowMajor(Z, k, 'y');
+  }
+
+  // Prepare header + body (sorted row-major: row asc, col asc)
+  const gridSizeX = xVals.length;
+  const gridSizeY = yVals.length;
+  const header = buildHeader(gridSizeX, gridSizeY, xVals[0], xVals[xVals.length-1], yVals[0], yVals[yVals.length-1]);
+
+  const body = toCSVLines(X, Y, Z);
+  const content = header + body;
+
+  const filename = 'updated_bathymetry_data_LATLONG.txt';
+  downloadText(filename, content);
+  setStatus('Done! File downloaded.');
+}
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  try {
+    const fd = new FormData(form);
+    const params = {
+      lonStart: parseFloat(fd.get('lonStart')),
+      lonEnd: parseFloat(fd.get('lonEnd')),
+      latStart: parseFloat(fd.get('latStart')),
+      latEnd: parseFloat(fd.get('latEnd')),
+      zone: parseInt(fd.get('zone')),
+      south: !!fd.get('south'),
+      dx: parseFloat(fd.get('dx')),
+      dy: parseFloat(fd.get('dy')),
+      sigma: parseFloat(fd.get('sigma')),
+      idwK: parseInt(fd.get('idwK')),
+      idwP: parseFloat(fd.get('idwP')),
+      sample: String(fd.get('sample') || '5'),
+    };
+    setStatus('Starting…');
+    await run(params);
+  } catch (err) {
+    console.error(err);
+    setStatus('Failed: ' + (err && err.message ? err.message : err));
+  }
+});
+
+tryBtn.addEventListener('click', ()=>{
+  form.requestSubmit();
+});
+</script>
+</body>
+</html>
