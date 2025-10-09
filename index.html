@@ -317,17 +317,23 @@ async function run(params){
   const poly = rectPolygon(lonStart, latStart, lonEnd, latEnd);
   const raw = await fetchBathymetry(poly, sample);
 
-  // raw: array of arrays OR objects; normalize to objects with keys
-  // The Python code expects [lon, lat, Z, distance] columns.
-  // The API returns an array of arrays in this order.
-  const df = raw.map(row => {
-    // Support both shapes just in case
-    if (Array.isArray(row)) {
+  // some APIs wrap the result
+  const arr = Array.isArray(raw) ? raw : raw.data || raw.results || [];
+
+  // now map
+  const df = arr.map(row => {
+  if (Array.isArray(row)) {
       return { longitude: row[0], latitude: row[1], Z: row[2], distance: row[3] };
-    } else {
-      return { longitude: row.longitude, latitude: row.latitude, Z: row.Z ?? row.z, distance: row.distance };
-    }
+  } else {
+      return {
+      longitude: row.longitude,
+      latitude: row.latitude,
+      Z: row.Z ?? row.z,
+      distance: row.distance
+      };
+  }
   });
+
 
   setStatus('Projecting to UTM…');
   const projUTM = utmProjDef(zone, south);
