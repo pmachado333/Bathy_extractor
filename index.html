@@ -2,135 +2,168 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>EARTH Vision Grid ► FDPlan Input Generator</title>
+  <title>Earth Vision Grid - FDPlan Input Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.js"></script>
   <style>
-    :root{--blue:#003366;--muted:#5c6b8a;--ok:#0f9d58;--err:#c62828;--bg:#f7f9fc}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg)}
-    header{background:var(--blue);color:#fff;padding:16px;text-align:center}
-    main{max-width:980px;margin:18px auto;padding:0 12px}
-    .card{background:#fff;border:1px solid #e6eef7;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.06);padding:16px;margin-bottom:14px}
-    .grid{display:grid;gap:12px}
-    @media (min-width:900px){.grid{grid-template-columns:1fr 1fr}}
-    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    label{display:block;font-size:13px;color:var(--muted);margin:4px 0 6px}
-    input[type="number"],input[type="text"]{width:100%;padding:10px;border:1px solid #d8e3f3;border-radius:10px;font-size:14px}
-    .switch{display:flex;align-items:center;gap:10px;margin-top:8px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    button{border:none;background:var(--blue);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer}
-    .status{min-height:20px;margin-top:6px}
-    .status.ok{color:var(--ok)} .status.err{color:var(--err)} .status.note{color:var(--muted)}
-    details{border:1px solid #e6eef7;border-radius:10px;padding:10px;background:#fbfdff}
-    summary{cursor:pointer;font-weight:700}
-    pre{white-space:pre;overflow:auto;border:1px solid #e6eef7;border-radius:10px;background:#0c1b33;color:#e7eefc;padding:10px;min-height:140px;margin-top:10px}
+    :root{
+      --slb:#003366; --slb-600:#1c5991; --ink:#0b1320; --muted:#64748b;
+      --bg:#f7f9fc; --card:#ffffff; --bd:#e6eef7; --ok:#0f9d58; --err:#c62828;
+      --r:14px;
+    }
+    *{box-sizing:border-box} html,body{height:100%} body{
+      margin:0; font-family:system-ui, Segoe UI, Roboto, Inter, Arial; color:var(--ink); background:var(--bg);
+    }
+    header{background:var(--slb); color:#fff; padding:14px 16px}
+    header .wrap{max-width:960px; margin:0 auto; display:flex; justify-content:space-between; align-items:center}
+    main{max-width:960px; margin:18px auto; padding:0 12px}
+    .card{background:var(--card); border:1px solid var(--bd); border-radius:var(--r); box-shadow:0 6px 24px rgba(0,0,0,.06);}
+    .content{padding:16px}
+    .grid{display:grid; gap:16px}
+    @media (min-width:900px){ .grid-2{grid-template-columns:1fr 1fr} }
+    h1{margin:0; font-size:18px; font-weight:800; letter-spacing:.2px}
+    .sub{opacity:.9; font-size:12px}
+    h2{margin:0 0 6px; font-size:15px}
+    .group{border:1px solid var(--bd); border-radius:12px; padding:12px}
+    .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    label{display:block; font-weight:600; font-size:13px; margin-bottom:6px; color:#0e2a4f}
+    input[type="number"], input[type="text"]{
+      width:100%; padding:10px 12px; border:1px solid #d7e3f4; border-radius:10px; font-size:14px; background:#fff;
+      outline:none; transition:border .15s, box-shadow .15s;
+    }
+    input:focus{border-color:var(--slb-600); box-shadow:0 0 0 3px rgba(28,89,145,.15)}
+    .desc{margin:6px 0 0; font-size:12px; color:var(--muted)}
+    .switch{display:flex; align-items:center; gap:10px; margin-top:6px}
+    .actions{display:flex; gap:10px; align-items:center; margin-top:8px}
+    button{
+      border:none; background:var(--slb); color:#fff; padding:12px 16px; border-radius:12px; font-weight:800; cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,51,102,.25); transition:filter .15s, transform .06s;
+    }
+    button:hover{filter:brightness(1.05)} button:active{transform:translateY(1px)}
+    .status{min-height:20px; font-size:13px; color:var(--muted)}
+    .status.ok{color:var(--ok)} .status.err{color:var(--err)}
+    details{border-top:1px solid var(--bd); padding:10px 16px}
+    summary{cursor:pointer; font-weight:700; color:#0e3770}
+    pre{background:#0c1b33; color:#e7eefc; border:1px solid #243a67; border-radius:10px; padding:10px; white-space:pre; overflow:auto; font-family:ui-monospace, Menlo, Consolas, monospace; min-height:120px; margin-top:8px}
   </style>
 </head>
 <body>
-<header>
-  <h1 style="margin:0;font-size:20px">GEBCO ► Run & Download</h1>
-  <div style="opacity:.9">by Patrick Machado</div>
-</header>
-
-<main>
-  <section class="card">
-    <div class="grid">
-      <!-- Coordinates -->
+  <header>
+    <div class="wrap">
       <div>
-        <h3 style="margin:0 0 8px">Coordinates</h3>
-        <div class="row2">
-          <div>
-            <label for="lonStart">Longitude start</label>
-            <input id="lonStart" type="number" step="0.0001" />
+        <h1>GEBCO — Run & Download</h1>
+        <div class="sub">by Patrick Machado</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="content">
+        <div class="grid grid-2">
+          <!-- Coordinates -->
+          <div class="group">
+            <h2>Coordinates</h2>
+            <div class="row2">
+              <div>
+                <label for="lonStart">Longitude start</label>
+                <input id="lonStart" type="number" step="0.0001" />
+                <div class="desc">Western boundary in degrees (e.g., −44.87).</div>
+              </div>
+              <div>
+                <label for="lonEnd">Longitude end</label>
+                <input id="lonEnd" type="number" step="0.0001" />
+                <div class="desc">Eastern boundary in degrees (e.g., −44.48). Must be ≥ start.</div>
+              </div>
+            </div>
+            <div class="row2" style="margin-top:8px">
+              <div>
+                <label for="latStart">Latitude start</label>
+                <input id="latStart" type="number" step="0.0001" />
+                <div class="desc">Southern boundary in degrees (e.g., −25.85).</div>
+              </div>
+              <div>
+                <label for="latEnd">Latitude end</label>
+                <input id="latEnd" type="number" step="0.0001" />
+                <div class="desc">Northern boundary in degrees (e.g., −25.45). Must be ≥ start.</div>
+              </div>
+            </div>
           </div>
-          <div>
-            <label for="lonEnd">Longitude end</label>
-            <input id="lonEnd" type="number" step="0.0001" />
+
+          <!-- Projection & Grid -->
+          <div class="group">
+            <h2>Projection & Grid</h2>
+            <div class="row2">
+              <div>
+                <label for="zone">UTM Zone</label>
+                <input id="zone" type="number" min="1" max="60" step="1" />
+                <div class="desc">UTM longitudinal zone (1–60). Example: 23 for SE Brazil.</div>
+              </div>
+              <div class="switch">
+                <input id="south" type="checkbox" />
+                <label for="south">South Hemisphere</label>
+              </div>
+            </div>
+            <div class="row2" style="margin-top:8px">
+              <div>
+                <label for="sample">sample (integer string)</label>
+                <input id="sample" type="text" inputmode="numeric" />
+                <div class="desc">Resampling parameter for API; leave as “1” unless advised.</div>
+              </div>
+              <div>
+                <label for="dxdy">Grid spacing (m) — dx=dy</label>
+                <input id="dxdy" type="number" min="1" step="1" />
+                <div class="desc">Cell spacing (meters) in UTM. Larger = coarser grid.</div>
+              </div>
+            </div>
+            <div style="margin-top:8px; max-width:260px">
+              <label for="edgeSteps">Edge offset (steps)</label>
+              <input id="edgeSteps" type="number" min="0" step="1" />
+              <div class="desc">Keep grid a few steps inside the bounds to avoid touching edges.</div>
+            </div>
           </div>
         </div>
-        <div class="row2">
-          <div>
-            <label for="latStart">Latitude start</label>
-            <input id="latStart" type="number" step="0.0001" />
-          </div>
-          <div>
-            <label for="latEnd">Latitude end</label>
-            <input id="latEnd" type="number" step="0.0001" />
-          </div>
+
+        <div class="actions">
+          <button id="btnRun" type="button">Run — Call API & Download</button>
+          <span id="status" class="status">Idle</span>
         </div>
       </div>
 
-      <!-- Projection & Grid -->
-      <div>
-        <h3 style="margin:0 0 8px">Projection & Grid</h3>
-        <div class="row2">
-          <div>
-            <label for="zone">UTM Zone</label>
-            <input id="zone" type="number" min="1" max="60" step="1" />
-          </div>
-          <div class="switch" style="margin-top:28px">
-            <input id="south" type="checkbox" />
-            <label for="south" style="margin:0">South Hemisphere</label>
-          </div>
-        </div>
-        <div class="row2" style="margin-top:8px">
-          <div>
-            <label for="sample">sample (integer string)</label>
-            <input id="sample" type="text" inputmode="numeric" />
-          </div>
-          <div>
-            <label for="dxdy">Grid spacing (m) — dx=dy</label>
-            <input id="dxdy" type="number" min="1" step="1" />
-          </div>
-        </div>
-        <div style="margin-top:8px;max-width:240px">
-          <label for="edgeSteps">Edge offset (steps)</label>
-          <input id="edgeSteps" type="number" min="0" step="1" />
-        </div>
-      </div>
-    </div>
-
-    <div class="actions">
-      <button id="btnRun" type="button" title="Call API and download file">Run — Call API & Download</button>
-      <span id="status" class="status note">Idle</span>
-    </div>
-  </section>
-
-  <!-- Collapsed debug/preview -->
-  <section class="card">
-    <details>
-      <summary>API Response (raw JSON)</summary>
-      <pre id="apiOut" aria-label="API response"></pre>
-    </details>
-    <details style="margin-top:10px">
-      <summary>Processed Preview (first 30 rows)</summary>
-      <pre id="tabOut" aria-label="Processed preview"></pre>
-    </details>
-  </section>
-</main>
+      <!-- Collapsed debug panes -->
+      <details>
+        <summary>API Response (raw JSON)</summary>
+        <pre id="apiOut"></pre>
+      </details>
+      <details>
+        <summary>Processed Preview (first 30 rows)</summary>
+        <pre id="tabOut"></pre>
+      </details>
+    </section>
+  </main>
 
 <script>
-  // Defaults (as requested)
+  // Defaults
   const defaults = {
-    coordinates:{ longitude:{start:-44.87, end:-44.48}, latitude:{start:-25.85, end:-25.45} },
+    coordinates:{ longitude:{ start:-44.87, end:-44.48 }, latitude:{ start:-25.85, end:-25.45 } },
     zone:23, South:true, sample:"1", dxdy:200, edgeSteps:3
   };
 
   // Elements
   const els = {
     lonStart: document.getElementById('lonStart'),
-    lonEnd: document.getElementById('lonEnd'),
+    lonEnd:   document.getElementById('lonEnd'),
     latStart: document.getElementById('latStart'),
-    latEnd: document.getElementById('latEnd'),
-    zone: document.getElementById('zone'),
-    south: document.getElementById('south'),
-    sample: document.getElementById('sample'),
-    dxdy: document.getElementById('dxdy'),
-    edge: document.getElementById('edgeSteps'),
-    btnRun: document.getElementById('btnRun'),
-    status: document.getElementById('status'),
-    apiOut: document.getElementById('apiOut'),
-    tabOut: document.getElementById('tabOut')
+    latEnd:   document.getElementById('latEnd'),
+    zone:     document.getElementById('zone'),
+    south:    document.getElementById('south'),
+    sample:   document.getElementById('sample'),
+    dxdy:     document.getElementById('dxdy'),
+    edge:     document.getElementById('edgeSteps'),
+    run:      document.getElementById('btnRun'),
+    status:   document.getElementById('status'),
+    apiOut:   document.getElementById('apiOut'),
+    tabOut:   document.getElementById('tabOut'),
   };
 
   function setDefaults(){
@@ -144,30 +177,9 @@
     els.dxdy.value     = defaults.dxdy;
     els.edge.value     = defaults.edgeSteps;
   }
-  function setStatus(msg, kind){ els.status.textContent = msg; els.status.className = 'status ' + (kind||'note'); }
-  function pretty(v){ if(typeof v==='string') return v; try{return JSON.stringify(v,null,2)}catch{return String(v)}}
-
-  // Input → cfg
-  function getCfg(){
-    const lonStart = Number(els.lonStart.value);
-    const lonEnd   = Number(els.lonEnd.value);
-    const latStart = Number(els.latStart.value);
-    const latEnd   = Number(els.latEnd.value);
-    const zone     = Number(els.zone.value);
-    const South    = !!els.south.checked;
-    if ([lonStart,lonEnd,latStart,latEnd,zone].some(n=>Number.isNaN(n))) throw new Error('All fields must be numbers.');
-    if (lonStart>lonEnd) throw new Error('Longitude start ≤ end.');
-    if (latStart>latEnd) throw new Error('Latitude start ≤ end.');
-    if (zone<1 || zone>60) throw new Error('UTM zone must be 1..60.');
-    return {lonStart,lonEnd,latStart,latEnd,zone,South};
-  }
+  function setStatus(msg, kind){ els.status.textContent = msg; els.status.className = 'status ' + (kind || ''); }
 
   // Build polygon URL
-  function buildUrl(sample, ring){
-    const poly = { type:'Polygon', coordinates:[ ring ] };
-    const jsonsrc = encodeURIComponent(JSON.stringify(poly));
-    return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;
-  }
   function buildRing({lonStart,lonEnd,latStart,latEnd}){
     return [
       [lonStart, latStart],
@@ -177,7 +189,13 @@
       [lonStart, latStart]
     ];
   }
+  function buildUrl(sample, ring){
+    const poly = { type:'Polygon', coordinates:[ ring ] };
+    const jsonsrc = encodeURIComponent(JSON.stringify(poly));
+    return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;
+  }
 
+  // Networking
   async function callApi(url){
     const res = await fetch(url, { headers: { accept:'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
@@ -185,7 +203,7 @@
     try { return JSON.parse(txt); } catch { return txt; }
   }
 
-  // ----- math & processing (same as previous, inner-bounds grid) -----
+  // Math / processing
   function makeAxisInner(min, max, step, edgeSteps){
     const eps=1e-9, pad=Math.max(0, edgeSteps|0)*step;
     const startBound=min+pad, endBound=max-pad;
@@ -208,7 +226,6 @@
     for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let j=-r;j<=r;j++){ const yy=Math.min(H-1,Math.max(0,y+j)); a+=kernel[j+r]*tmp[yy*W+x]; } out[y*W+x]=a; } }
     return out;
   }
-
   function normalizeApiData(apiData){
     if (apiData && Array.isArray(apiData.longitude) && Array.isArray(apiData.latitude) && Array.isArray(apiData.z)) {
       const L = Math.min(apiData.longitude.length, apiData.latitude.length, apiData.z.length);
@@ -300,20 +317,30 @@
     return { finalText, preview, dims:{x:W,y:H}, bounds:{xmin:x0,xmax:x1,ymin:y0,ymax:y1} };
   }
 
+  // Orchestration
   async function runOnce(){
     try{
       setStatus('Calling API…');
-      const cfg = getCfg();
-      const ring = buildRing(cfg);
+      const lonStart = Number(els.lonStart.value);
+      const lonEnd   = Number(els.lonEnd.value);
+      const latStart = Number(els.latStart.value);
+      const latEnd   = Number(els.latEnd.value);
+      const zone     = Number(els.zone.value);
+      const South    = !!els.south.checked;
+
+      if ([lonStart,lonEnd,latStart,latEnd,zone].some(n=>Number.isNaN(n))) throw new Error('All fields must be numbers.');
+      if (lonStart>lonEnd) throw new Error('Longitude start ≤ end.');
+      if (latStart>latEnd) throw new Error('Latitude start ≤ end.');
+      if (zone<1 || zone>60) throw new Error('UTM zone must be 1..60.');
+
+      const ring = buildRing({lonStart,lonEnd,latStart,latEnd});
       const url  = buildUrl(els.sample.value || '1', ring);
       const apiData = await callApi(url);
-      els.apiOut.textContent = pretty(apiData);
+      els.apiOut.textContent = typeof apiData === 'string' ? apiData : JSON.stringify(apiData, null, 2);
 
       setStatus('Processing…');
       const res = processData({
-        apiData,
-        zone: cfg.zone,
-        South: cfg.South,
+        apiData, zone, South,
         dxdy: Math.max(1, Number(els.dxdy.value) || 200),
         edgeSteps: Math.max(0, Math.floor(Number(els.edge.value) || 3))
       });
@@ -328,14 +355,14 @@
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='updated_bathymetry_data_LATLONG';
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
 
-      setStatus('Done. File downloaded: updated_bathymetry_data_LATLONG', 'ok');
+      setStatus('Done. File downloaded.', 'ok');
     }catch(e){
       setStatus(e?.message || String(e), 'err');
     }
   }
 
-  els.btnRun.addEventListener('click', runOnce);
-  setDefaults(); // init
+  els.run.addEventListener('click', runOnce);
+  setDefaults();
 </script>
 </body>
 </html>
