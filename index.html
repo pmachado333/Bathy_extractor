@@ -6,98 +6,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.js"></script>
   <style>
-    :root{
-      --slb:#003366; --slb-600:#1c5991; --ink:#0b1320; --muted:#64748b;
-      --bg:#f7f9fc; --card:#ffffff; --bd:#e6eef7; --ok:#0f9d58; --err:#c62828; --r:14px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font-family:system-ui,Segoe UI,Roboto,Inter,Arial;color:var(--ink);background:var(--bg)}
+    :root{--slb:#003366;--slb-600:#1c5991;--ink:#0b1320;--muted:#64748b;--bg:#f7f9fc;--card:#fff;--bd:#e6eef7;--ok:#0f9d58;--err:#c62828;--r:14px}
+    *{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:system-ui,Segoe UI,Roboto,Inter,Arial;color:var(--ink);background:var(--bg)}
     header{background:var(--slb);color:#fff;padding:14px 16px}
     header .wrap{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+    h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px}.sub{opacity:.9;font-size:12px}
     main{max-width:1100px;margin:18px auto;padding:0 12px}
     .card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 6px 24px rgba(0,0,0,.06)}
     .content{padding:16px}
-
-    /* GRID LAYOUT (2x2) */
-    .grid-layout{
-      display:grid; gap:16px;
-      grid-template-columns:1.15fr .85fr;
-      grid-template-areas:
-        "coords schematic"
-        "proj   optional";
-    }
-    @media (max-width:979px){
-      .grid-layout{
-        grid-template-columns:1fr;
-        grid-template-areas:
-          "coords"
-          "schematic"
-          "proj"
-          "optional";
-      }
-    }
-    .coords   { grid-area: coords; }
-    .schem    { grid-area: schematic; }
-    .proj     { grid-area: proj; }
-    .optional { grid-area: optional; }
-
-    h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px}
-    .sub{opacity:.9;font-size:12px}
-    h2{margin:0 0 6px;font-size:15px}
+    .grid-layout{display:grid;gap:16px;grid-template-columns:1.15fr .85fr;grid-template-areas:"coords schematic" "proj optional" "fdp fdp"}
+    @media (max-width:979px){.grid-layout{grid-template-columns:1fr;grid-template-areas:"coords" "schematic" "proj" "optional" "fdp"}}
     .group{border:1px solid var(--bd);border-radius:12px;padding:12px;background:#fff}
-    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .coords{grid-area:coords}.schem{grid-area:schematic}.proj{grid-area:proj}.optional{grid-area:optional}.fdp{grid-area:fdp}
+    h2{margin:0 0 6px;font-size:15px}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#0e2a4f}
-    input[type="number"],input[type="text"]{
-      width:100%;padding:10px 12px;border:1px solid #d7e3f4;border-radius:10px;font-size:14px;background:#fff;
-      outline:none;transition:border .15s,box-shadow .15s
-    }
+    input[type="number"],input[type="text"]{width:100%;padding:10px 12px;border:1px solid #d7e3f4;border-radius:10px;font-size:14px;outline:none;transition:border .15s,box-shadow .15s}
     input:focus{border-color:var(--slb-600);box-shadow:0 0 0 3px rgba(28,89,145,.15)}
-    .desc{margin:6px 0 0;font-size:12px;color:var(--muted)}
     .switch{display:flex;align-items:center;gap:10px;margin-top:6px}
-    .actions{display:flex;gap:10px;align-items:center;margin-top:8px}
-    button{
-      border:none;background:var(--slb);color:#fff;padding:12px 16px;border-radius:12px;font-weight:800;cursor:pointer;
-      box-shadow:0 8px 18px rgba(0,51,102,.25);transition:filter .15s,transform .06s
-    }
-    button:hover{filter:brightness(1.05)} button:active{transform:translateY(1px)}
-    .status{min-height:20px;font-size:13px;color:var(--muted)} .status.ok{color:var(--ok)} .status.err{color:var(--err)}
-    details{padding:0}
-
-    pre{
-      background:#0c1b33;color:#e7eefc;border:1px solid #243a67;border-radius:10px;padding:10px;white-space:pre;overflow:auto;
-      font-family:ui-monospace,Menlo,Consolas,monospace;min-height:120px;margin-top:8px
-    }
-
-    /* Loading overlay */
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:saturate(120%) blur(2px);display:none;align-items:center;justify-content:center;z-index:9999}
-    .panel{background:#ffffff;border:1px solid var(--bd);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);width:min(420px,90vw);padding:16px}
-    .panel h3{margin:0 0 8px;color:#0e2a4f}
-    .progress{height:8px;background:#eef3fb;border-radius:999px;overflow:hidden;border:1px solid #d9e6f6}
-    .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--slb),var(--slb-600))}
-    .row{display:flex;align-items:center;justify-content:space-between;margin:10px 0 0}
-    .ghost{background:#fff;color:var(--slb);border:1px solid #cfe1f7;box-shadow:none}
-
-    /* Schematic */
-    .schematic-title{display:flex;justify-content:center}
-    .schematic-wrap{border:1px solid var(--bd);border-radius:10px;padding:10px;background:#fbfdff}
-    .schematic{cursor:pointer}
-    .schematic svg{width:100%;height:auto;display:block}
-
-    /* Optional panel (compact) */
-    .optional-fixed{position:relative; overflow:hidden;}
-    .opt-compact{padding-top:6px}
-    .opt-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:8px}
-    .opt-compact label{font-size:12px;margin-bottom:4px}
-    .opt-compact input{padding:6px 8px;font-size:12px;border-radius:8px}
-    .opt-compact .desc{font-size:11px;margin-top:4px}
-    @media (max-width:979px){ .optional-fixed{height:auto !important} .opt-grid{grid-template-columns:1fr 1fr} }
-
-    /* Credits footer (discreet) */
-    footer.credits{max-width:1100px;margin:18px auto 28px;padding:0 12px;color:var(--muted);font-size:11.5px;line-height:1.45}
-    .credits .title{font-weight:800;color:#0e2a4f;margin-bottom:6px;font-size:12px}
-    .credits a{color:var(--slb-600);text-decoration:underline}
-    .credits .block{margin-top:8px}
+    .desc{margin:6px 0 0;font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
+    button{border:none;background:var(--slb);color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(0,51,102,.25);transition:filter .15s,transform .06s}
+    .secondary{background:#fff;color:var(--slb);border:1px solid #cfe1f7;box-shadow:none}
+    button:hover{filter:brightness(1.05)}button:active{transform:translateY(1px)}
+    .status{min-height:20px;font-size:13px;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:var(--err)}
+    pre{background:#0c1b33;color:#e7eefc;border:1px solid #243a67;border-radius:10px;padding:10px;white-space:pre;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;min-height:120px;margin-top:8px}
+    .schematic-title{display:flex;justify-content:center}.schematic-wrap{border:1px solid var(--bd);border-radius:10px;padding:10px;background:#fbfdff}.schematic{cursor:pointer}.schematic svg{width:100%;height:auto;display:block}
+    .optional-fixed{position:relative;overflow:hidden}.opt-compact{padding-top:6px}.opt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .opt-compact label{font-size:12px;margin-bottom:4px}.opt-compact input{padding:6px 8px;font-size:12px;border-radius:8px}.opt-compact .desc{font-size:11px;margin-top:4px}
+    @media (max-width:979px){.optional-fixed{height:auto!important}.opt-grid{grid-template-columns:1fr 1fr}}
+    .kv{font-size:12px;color:#0e2a4f;background:#f3f7fe;border:1px solid #dfe9fb;padding:6px 8px;border-radius:8px;margin-top:6px}
   </style>
 </head>
 <body>
@@ -121,60 +59,60 @@
               <div>
                 <label for="lonStart">Longitude start</label>
                 <input id="lonStart" type="number" step="0.0001" />
-                <div class="desc">Western boundary in degrees (e.g., −44.87).</div>
+                <div class="desc">Western boundary (deg). Example: −44.87.</div>
               </div>
               <div>
                 <label for="lonEnd">Longitude end</label>
                 <input id="lonEnd" type="number" step="0.0001" />
-                <div class="desc">Eastern boundary in degrees (e.g., −44.48). Must be ≥ start.</div>
+                <div class="desc">Eastern boundary (deg). Must be ≥ start.</div>
               </div>
             </div>
             <div class="row2" style="margin-top:8px">
               <div>
                 <label for="latStart">Latitude start</label>
                 <input id="latStart" type="number" step="0.0001" />
-                <div class="desc">Southern boundary in degrees (e.g., −25.85).</div>
+                <div class="desc">Southern boundary (deg). Example: −25.85.</div>
               </div>
               <div>
                 <label for="latEnd">Latitude end</label>
                 <input id="latEnd" type="number" step="0.0001" />
-                <div class="desc">Northern boundary in degrees (e.g., −25.45). Must be ≥ start.</div>
+                <div class="desc">Northern boundary (deg). Must be ≥ start.</div>
               </div>
             </div>
           </div>
 
-          <!-- Schematic -->
+          <!-- Map schematic -->
           <div class="group schem">
             <div class="schematic-title"><h2>Map schematic</h2></div>
             <div class="schematic-wrap">
               <div id="schematic" class="schematic" aria-label="Map schematic (−180..180°, −90..90°)"></div>
             </div>
-            <div class="desc" style="text-align:center;margin-top:6px">
-              Click to open Google Maps with pins at your bounds.
-            </div>
+            <div class="desc" style="text-align:center;margin-top:6px">Click to open Google Maps with the 4 corner pins.</div>
           </div>
 
           <!-- Projection -->
-          <div id="projectionBox" class="group proj">
+          <div class="group proj" id="projectionBox">
             <h2>Projection</h2>
             <div class="row2">
               <div>
                 <label for="zone">UTM Zone</label>
                 <input id="zone" type="number" min="1" max="60" step="1" />
-                <div class="desc">UTM zone (1–60). Example: 23 for SE Brazil.</div>
+                <div class="desc">UTM zone (1–60). Example: 23 (SE Brazil).</div>
               </div>
               <div class="switch">
                 <input id="south" type="checkbox" />
                 <label for="south">South Hemisphere</label>
               </div>
             </div>
+
             <div class="actions">
-              <button id="btnRun" type="button">Run — Call API & Download</button>
+              <button id="btnRun" type="button">Run — GEBCO & Build Grid</button>
+              <button id="btnDownload" type="button" class="secondary">Download Grid File</button>
               <span id="status" class="status">Idle</span>
             </div>
           </div>
 
-          <!-- Optional (advanced) -->
+          <!-- Optional -->
           <div id="optionalBox" class="group optional optional-fixed">
             <details id="optParams">
               <summary>Optional parameters (advanced)</summary>
@@ -183,7 +121,7 @@
                   <div>
                     <label for="sample">sample</label>
                     <input id="sample" type="text" inputmode="numeric" />
-                    <div class="desc">API resampling. Keep “1”.</div>
+                    <div class="desc">GEBCO resampling. Keep “1”.</div>
                   </div>
                   <div>
                     <label for="dxdy">Grid spacing (m)</label>
@@ -193,92 +131,117 @@
                   <div>
                     <label for="edgeSteps">Edge offset (steps)</label>
                     <input id="edgeSteps" type="number" min="0" step="1" />
-                    <div class="desc">Keep grid inside bounds.</div>
+                    <div class="desc">Keeps grid inside bounds.</div>
                   </div>
                 </div>
               </div>
             </details>
           </div>
+
+          <!-- FDPlan -->
+          <div class="group fdp">
+            <h2>FDPlan Upload</h2>
+            <div class="row3">
+              <div>
+                <label for="fdpName">Name</label>
+                <input id="fdpName" type="text" placeholder="Bathymetry External" />
+              </div>
+              <div>
+                <label for="fdpAppKey">App Key</label>
+                <input id="fdpAppKey" type="text" placeholder="your app key" />
+              </div>
+              <div>
+                <label for="fdpPartition">Data Partition</label>
+                <input id="fdpPartition" type="text" placeholder="petrobras-lab" />
+              </div>
+            </div>
+            <div class="row2" style="margin-top:10px">
+              <div>
+                <label for="fdpAuth">Authorization (key only)</label>
+                <input id="fdpAuth" type="text" placeholder="paste token (without 'Bearer ')" />
+                <div class="desc">Sent as <code>authorization: Bearer &lt;key&gt;</code>.</div>
+              </div>
+              <div>
+                <label for="fdpStudyId">StudyId</label>
+                <input id="fdpStudyId" type="text" placeholder="01JZ8QAYF3H2V9F7QHFDGJH2WV" />
+                <div class="desc">Tag used on job create.</div>
+              </div>
+            </div>
+
+            <!-- One button per API call -->
+            <div class="actions" style="margin-top:12px;flex-wrap:wrap">
+              <button id="btnCreateJob" type="button">1) Create Job</button>
+              <span class="kv">jobId: <span id="jobIdView">—</span></span>
+              <button id="btnGetContainer" type="button" class="secondary">2) Get Container</button>
+              <span class="kv">containerID: <span id="contIdView">—</span></span>
+              <button id="btnUploadFile" type="button">3) Upload File</button>
+              <button id="btnSetState" type="button" class="secondary">4) Set State</button>
+            </div>
+          </div>
         </div>
 
         <!-- Logs -->
         <details>
-          <summary>API Response (raw JSON)</summary>
+          <summary>GEBCO API Response (raw JSON)</summary>
           <pre id="apiOut"></pre>
         </details>
         <details>
           <summary>Processed Preview (first 30 rows)</summary>
           <pre id="tabOut"></pre>
         </details>
+
+        <details open>
+          <summary>FDPlan — 1) Create Job</summary>
+          <pre id="logJob"></pre>
+        </details>
+        <details>
+          <summary>FDPlan — 2) Get Container</summary>
+          <pre id="logEvents"></pre>
+        </details>
+        <details>
+          <summary>FDPlan — 3) Upload File</summary>
+          <pre id="logUpload"></pre>
+        </details>
+        <details>
+          <summary>FDPlan — 4) Set State</summary>
+          <pre id="logState"></pre>
+        </details>
+
       </div>
     </section>
   </main>
 
-  <!-- Discreet credits footer -->
-  <footer class="credits" aria-label="Attribution footer">
-    <div class="title">Attribution</div>
-    <div class="block">
-      <strong>Data source</strong><br/>
-      GEBCO Compilation Group (2023) GEBCO 2023 Grid (doi:10.5285/f98b053b-0cbc-6c23-e053-6c86abc0af7b)<br/>
-      <a href="https://www.gebco.net/data_and_products/gridded_bathymetry_data/" target="_blank" rel="noopener">https://www.gebco.net/data_and_products/gridded_bathymetry_data/</a>
-    </div>
-    <div class="block">
-      <strong>API provider</strong><br/>
-      This API is compiled by Ocean Data Bank (ODB):<br/>
-      Ocean Data Bank, National Science and Technology Council, Taiwan. <a href="https://doi.org/10.5281/zenodo.7512112" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.7512112</a>. Retrieved 2025-10-10 from <a href="https://api.odb.ntu.edu.tw/gebco" target="_blank" rel="noopener">api.odb.ntu.edu.tw/gebco</a>. v1.0.
-    </div>
-    <div class="block">
-      <strong>Google Maps</strong><br/>
-      This page does not embed Google Maps or use Google Maps Platform APIs; it only opens a Google Maps URL in a new tab for convenience. For embedded maps or API usage, follow Google’s branding and terms (Google Maps Platform Terms of Service and attribution guidelines).
-    </div>
-  </footer>
-
-  <!-- Loading Overlay -->
-  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-live="assertive">
-    <div class="panel">
-      <h3 id="ovTitle">Working…</h3>
-      <div class="progress" aria-hidden="true"><div id="ovBar" class="bar"></div></div>
-      <div class="row">
-        <div id="ovStep" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#0e2a4f">Starting…</div>
-        <div><button id="btnCancel" class="ghost" type="button">Cancel</button></div>
-      </div>
-      <div id="ovHint" class="desc" style="margin-top:8px">Please keep this tab open until the download starts.</div>
-    </div>
-  </div>
-
 <script>
+  /* ---------- Constants / Defaults ---------- */
+  const SOURCE_URL = 'https://pmachado333.github.io/Bathy_extractor';
+  const FTYPE = "com.slb.cloud.fdplan.data_sources.transformation_required_test:data-types:gebco-external:Patrick Custom Solution.v1";
   const defaults = {
     coordinates:{ longitude:{ start:-44.87, end:-44.48 }, latitude:{ start:-25.85, end:-25.45 } },
-    zone:23, South:true, sample:"1", dxdy:200, edgeSteps:3
+    zone:23, South:true, sample:"1", dxdy:200, edgeSteps:3,
+    fdpName:"Bathymetry External", fdpStudyId:"01JZ8QAYF3H2V9F7QHFDGJH2WV"
   };
 
+  /* ---------- Elements ---------- */
+  const $ = id => document.getElementById(id);
   const els = {
-    lonStart: document.getElementById('lonStart'),
-    lonEnd:   document.getElementById('lonEnd'),
-    latStart: document.getElementById('latStart'),
-    latEnd:   document.getElementById('latEnd'),
-    zone:     document.getElementById('zone'),
-    south:    document.getElementById('south'),
-    sample:   document.getElementById('sample'),
-    dxdy:     document.getElementById('dxdy'),
-    edge:     document.getElementById('edgeSteps'),
-    run:      document.getElementById('btnRun'),
-    status:   document.getElementById('status'),
-    apiOut:   document.getElementById('apiOut'),
-    tabOut:   document.getElementById('tabOut'),
-    overlay:  document.getElementById('overlay'),
-    ovBar:    document.getElementById('ovBar'),
-    ovTitle:  document.getElementById('ovTitle'),
-    ovStep:   document.getElementById('ovStep'),
-    btnCancel:document.getElementById('btnCancel'),
-    schematic:document.getElementById('schematic'),
-    projectionBox: document.getElementById('projectionBox'),
-    optionalBox: document.getElementById('optionalBox'),
-    optParams: document.getElementById('optParams'),
+    lonStart:$('lonStart'), lonEnd:$('lonEnd'), latStart:$('latStart'), latEnd:$('latEnd'),
+    zone:$('zone'), south:$('south'), sample:$('sample'), dxdy:$('dxdy'), edge:$('edgeSteps'),
+    btnRun:$('btnRun'), btnDownload:$('btnDownload'), status:$('status'),
+    schematic:$('schematic'),
+    optParams:$('optParams'), optionalBox:$('optionalBox'), projectionBox:$('projectionBox'),
+    apiOut:$('apiOut'), tabOut:$('tabOut'),
+    fdpName:$('fdpName'), fdpAppKey:$('fdpAppKey'), fdpPartition:$('fdpPartition'), fdpAuth:$('fdpAuth'), fdpStudyId:$('fdpStudyId'),
+    btnCreateJob:$('btnCreateJob'), btnGetContainer:$('btnGetContainer'), btnUploadFile:$('btnUploadFile'), btnSetState:$('btnSetState'),
+    logJob:$('logJob'), logEvents:$('logEvents'), logUpload:$('logUpload'), logState:$('logState'),
+    jobIdView:$('jobIdView'), contIdView:$('contIdView')
   };
 
   let controller = null;
+  let lastResult = null; // { finalText, preview, dims, bounds }
+  let savedJobId = null;
+  let savedContainerID = null;
 
+  /* ---------- UI ---------- */
   function setDefaults(){
     els.lonStart.value = defaults.coordinates.longitude.start;
     els.lonEnd.value   = defaults.coordinates.longitude.end;
@@ -289,166 +252,78 @@
     els.sample.value   = defaults.sample;
     els.dxdy.value     = defaults.dxdy;
     els.edge.value     = defaults.edgeSteps;
+    els.fdpName.value  = defaults.fdpName;
+    els.fdpStudyId.value = defaults.fdpStudyId;
     els.optParams.open = false;
     renderSchematic();
     syncOptionalHeight();
   }
-  function setStatus(msg, kind){ els.status.textContent = msg; els.status.className = 'status ' + (kind || ''); }
+  function setStatus(msg, kind){ els.status.textContent=msg; els.status.className='status '+(kind||''); }
+  function syncOptionalHeight(){ const d=innerWidth>=980; els.optionalBox.style.height=d?(els.projectionBox.offsetHeight||260)+'px':'auto'; }
+  addEventListener('resize', syncOptionalHeight);
 
-  function syncOptionalHeight(){
-    const desktop = window.innerWidth >= 980;
-    if (!desktop){ els.optionalBox.style.height='auto'; return; }
-    const ph = els.projectionBox.offsetHeight || 260;
-    els.optionalBox.style.height = ph + 'px';
+  /* ---------- Schematic (with min size) ---------- */
+  function renderSchematic(){
+    const lonS=+els.lonStart.value,lonE=+els.lonEnd.value,latS=+els.latStart.value,latE=+els.latEnd.value;
+    const W=640,H=320,xL=((Math.min(lonS,lonE)+180)/360)*W,xR=((Math.max(lonS,lonE)+180)/360)*W;
+    const yT=((90-Math.max(latS,latE))/180)*H,yB=((90-Math.min(latS,latE))/180)*H;
+    const minPix=168,trueW=Math.max(0,xR-xL),trueH=Math.max(0,yB-yT),rectW=Math.max(minPix,trueW),rectH=Math.max(minPix,trueH);
+    const cx=(xL+xR)/2,cy=(yT+yB)/2; let x0=Math.min(Math.max(0,cx-rectW/2),W-rectW),y0=Math.min(Math.max(0,cy-rectH/2),H-rectH);
+    const grat=[]; for(let lon=-150;lon<=150;lon+=30){const x=((lon+180)/360)*W; grat.push(`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#dfe8f5"/><text x="${x}" y="${H-6}" fill="#7a8aa6" font-size="10" text-anchor="middle">${lon}°</text>`)}
+    for(let lat=-60;lat<=60;lat+=30){const y=((90-lat)/180)*H; grat.push(`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#dfe8f5"/><text x="6" y="${y-4}" fill="#7a8aa6" font-size="10">${lat}°</text>`)}
+    const svg=`<svg viewBox="0 0 ${W} ${H}">
+      <rect x="0" y="0" width="${W}" height="${H}" fill="#fff" stroke="#cddbf1"/>${grat.join('')}
+      <rect x="${x0}" y="${y0}" width="${rectW}" height="${rectH}" fill="rgba(0,102,204,0.12)" stroke="#1c5991" stroke-width="2"/>
+      <line x1="${x0}" y1="0" x2="${x0}" y2="${H}" stroke="#1c5991" stroke-dasharray="4,3"/>
+      <line x1="${x0+rectW}" y1="0" x2="${x0+rectW}" y2="${H}" stroke="#1c5991" stroke-dasharray="4,3"/>
+      <line x1="0" y1="${y0}" x2="${W}" y2="${y0}" stroke="#1c5991" stroke-dasharray="4,3"/>
+      <line x1="0" y1="${y0+rectH}" x2="${W}" y2="${y0+rectH}" stroke="#1c5991" stroke-dasharray="4,3"/>
+      <g font-size="11" fill="#0e2a4f" font-weight="600">
+        <text x="${x0+4}" y="${Math.max(12,y0-8)}">Lon start</text>
+        <text x="${Math.max(4,x0+rectW-56)}" y="${Math.max(12,y0-8)}">Lon end</text>
+        <text x="${Math.min(W-90,x0+6)}" y="${y0+14}">Lat end</text>
+        <text x="${Math.min(W-90,x0+6)}" y="${y0+rectH-6}">Lat start</text>
+      </g>
+    </svg>`;
+    els.schematic.innerHTML = svg;
   }
-  window.addEventListener('resize', syncOptionalHeight);
+  function openGoogleMapsPins(){
+    const lonStart=+els.lonStart.value,lonEnd=+els.lonEnd.value,latStart=+els.latStart.value,latEnd=+els.latEnd.value;
+    const west=Math.min(lonStart,lonEnd),east=Math.max(lonStart,lonEnd),south=Math.min(latStart,latEnd),north=Math.max(latStart,latEnd);
+    const SW=`${south.toFixed(6)},${west.toFixed(6)}`,NW=`${north.toFixed(6)},${west.toFixed(6)}`,NE=`${north.toFixed(6)},${east.toFixed(6)}`,SE=`${south.toFixed(6)},${east.toFixed(6)}`;
+    const url4=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}&waypoints=${encodeURIComponent(NW)}|${encodeURIComponent(SE)}`;
+    const url2=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}`;
+    const w=open(url4,'_blank','noopener'); if(!w||w.closed||typeof w.closed==='undefined') open(url2,'_blank','noopener');
+  }
+  els.schematic.addEventListener('click', openGoogleMapsPins);
 
-  const nextFrame = () => new Promise(r => requestAnimationFrame(r));
-  function showOverlay(title, step, pct){
-    els.overlay.style.display='flex';
-    setOverlay(title, step, pct);
-    window.addEventListener('beforeunload', warnUnload);
-  }
-  function hideOverlay(){
-    els.overlay.style.display='none';
-    window.removeEventListener('beforeunload', warnUnload);
-  }
-  function setOverlay(title, step, pct){
-    if(title) els.ovTitle.textContent=title;
-    if(step) els.ovStep.textContent=step;
-    if(pct!=null) els.ovBar.style.width = Math.max(0, Math.min(100, pct)) + '%';
-  }
-  function warnUnload(e){ e.preventDefault(); e.returnValue='Processing… please wait.'; }
-
-  function buildRing({lonStart,lonEnd,latStart,latEnd}){
-    return [[lonStart,latStart],[lonStart,latEnd],[lonEnd,latEnd],[lonEnd,latStart],[lonStart,latStart]];
-  }
-  function buildUrl(sample, ring){
-    const poly = { type:'Polygon', coordinates:[ ring ] };
-    const jsonsrc = encodeURIComponent(JSON.stringify(poly));
-    return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;
-  }
-  async function callApi(url, signal){
-    const res = await fetch(url, { headers: { accept:'application/json' }, signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    const txt = await res.text();
-    try { return JSON.parse(txt); } catch { return txt; }
-  }
-
-  function makeAxisInner(min, max, step, edgeSteps){
-    const eps=1e-9, pad=Math.max(0, edgeSteps|0)*step;
-    const startBound=min+pad, endBound=max-pad;
-    const vals=[];
-    if (endBound - startBound <= step + eps) return { vals:[], startBound, endBound };
-    for(let v=startBound; v<=endBound - step - eps; v+=step) vals.push(v);
-    return { vals, startBound, endBound };
-  }
-  function knnIndices(points, qx, qy, k=12){ const d=points.map((p,i)=>[i,(p[0]-qx)**2+(p[1]-qy)**2]); d.sort((a,b)=>a[1]-b[1]); return d.slice(0,Math.min(k,d.length)).map(x=>x[0]); }
-  function idwInterpolate(points, values, qx, qy, k=12, power=2, eps=1e-12){
-    const idxs = knnIndices(points, qx, qy, k); let num=0, den=0;
-    for(const i of idxs){ const dx=points[i][0]-qx, dy=points[i][1]-qy; const d2=dx*dx+dy*dy; if (d2<eps) return values[i]; const w=1/Math.pow(d2,power/2); num+=w*values[i]; den+=w; }
-    return den>0 ? num/den : NaN;
-  }
-  function gaussianKernel1D(sigma){ const r=Math.max(1,Math.floor(sigma*3)); const k=[]; let s=0, s2=2*sigma*sigma; for(let i=-r;i<=r;i++){ const v=Math.exp(-(i*i)/s2); k.push(v); s+=v;} return k.map(v=>v/s); }
-  function normalizeApiData(apiData){
-    if (apiData && Array.isArray(apiData.longitude) && Array.isArray(apiData.latitude) && Array.isArray(apiData.z)) {
-      const L = Math.min(apiData.longitude.length, apiData.latitude.length, apiData.z.length);
-      const rows = new Array(L);
-      for (let i=0;i<L;i++){
-        rows[i] = { longitude:+apiData.longitude[i], latitude:+apiData.latitude[i], Z:+apiData.z[i],
-                    distance: apiData.distance ? (+apiData.distance[i] || 0) : 0 };
-      }
-      return rows;
-    }
-    if (Array.isArray(apiData) && apiData.length){
-      if (Array.isArray(apiData[0])) return apiData.map(r=>({longitude:+r[0],latitude:+r[1],Z:+r[2],distance:+(r[3]||0)}));
-      if (typeof apiData[0]==='object') return apiData.map(o=>({longitude:+(o.longitude??o.lon??o[0]),latitude:+(o.latitude??o.lat??o[1]),Z:+(o.Z??o.z??o[2]),distance:+(o.distance??o[3]??0)}));
-    }
-    throw new Error('Unexpected API format (need longitude[], latitude[], z[]).');
-  }
-
+  /* ---------- GEBCO fetch + grid ---------- */
+  const nextFrame = () => new Promise(r=>requestAnimationFrame(r));
+  function buildRing({lonStart,lonEnd,latStart,latEnd}){return [[lonStart,latStart],[lonStart,latEnd],[lonEnd,latEnd],[lonEnd,latStart],[lonStart,latStart]]}
+  function buildUrl(sample, ring){ const poly={type:'Polygon',coordinates:[ring]}; const jsonsrc=encodeURIComponent(JSON.stringify(poly)); return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;}
+  async function callApi(url, signal){ const r=await fetch(url,{headers:{accept:'application/json'},signal}); if(!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`); const t=await r.text(); try{return JSON.parse(t)}catch{return t} }
+  function makeAxisInner(min,max,step,edge){const eps=1e-9,pad=Math.max(0,edge|0)*step;const s=min+pad,e=max-pad,vals=[];if(e-s<=step+eps) return {vals:[],startBound:s,endBound:e};for(let v=s;v<=e-step-eps;v+=step) vals.push(v);return {vals,startBound:s,endBound:e}}
+  function knnIndices(pts,qx,qy,k=12){const d=pts.map((p,i)=>[i,(p[0]-qx)**2+(p[1]-qy)**2]);d.sort((a,b)=>a[1]-b[1]);return d.slice(0,Math.min(k,d.length)).map(x=>x[0])}
+  function idwInterpolate(pts,vals,qx,qy,k=12,power=2,eps=1e-12){const idx=knnIndices(pts,qx,qy,k);let num=0,den=0;for(const i of idx){const dx=pts[i][0]-qx,dy=pts[i][1]-qy,d2=dx*dx+dy*dy;if(d2<eps) return vals[i];const w=1/Math.pow(d2,power/2);num+=w*vals[i];den+=w}return den>0?num/den:NaN}
+  function gaussianKernel1D(sigma){const r=Math.max(1,Math.floor(sigma*3));const k=[];let s=0,s2=2*sigma*sigma;for(let i=-r;i<=r;i++){const v=Math.exp(-(i*i)/s2);k.push(v);s+=v}return k.map(v=>v/s)}
+  function normalizeApiData(d){if(d&&Array.isArray(d.longitude)&&Array.isArray(d.latitude)&&Array.isArray(d.z)){const L=Math.min(d.longitude.length,d.latitude.length,d.z.length);return Array.from({length:L},(_,i)=>({longitude:+d.longitude[i],latitude:+d.latitude[i],Z:+d.z[i],distance:d.distance?(+d.distance[i]||0):0}))}if(Array.isArray(d)&&d.length){if(Array.isArray(d[0])) return d.map(r=>({longitude:+r[0],latitude:+r[1],Z:+r[2],distance:+(r[3]||0)}));if(typeof d[0]==='object') return d.map(o=>({longitude:+(o.longitude??o.lon??o[0]),latitude:+(o.latitude??o.lat??o[1]),Z:+(o.Z??o.z??o[2]),distance:+(o.distance??o[3]??0)}))}throw new Error('Unexpected API format (need longitude[], latitude[], z[]).')}
   async function processDataAsync({ apiData, zone, South, dxdy, edgeSteps }, update, signal){
-    if (signal?.aborted) throw new DOMException('Aborted','AbortError');
     const rows = normalizeApiData(apiData);
-
-    const utm = `+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`;
-    const proj = proj4('WGS84', utm);
-
-    update('Projecting coordinates…', 5);
-    for (let i=0;i<rows.length;i++){
-      if (signal?.aborted) throw new DOMException('Aborted','AbortError');
-      const r=rows[i]; const xy = proj.forward([r.longitude, r.latitude]); r.X=xy[0]; r.Y=xy[1];
-      if (i % 2000 === 0) await nextFrame();
-    }
-
-    const dx=dxdy, dy=dxdy;
-    const x_min = Math.min(...rows.map(r=>r.X)), x_max = Math.max(...rows.map(r=>r.X));
-    const y_min = Math.min(...rows.map(r=>r.Y)), y_max = Math.max(...rows.map(r=>r.Y));
-    const axX = makeAxisInner(x_min, y_max===y_min?x_max:x_max, dx, edgeSteps); // left as-is
-    const axY = makeAxisInner(y_min, y_max, dy, edgeSteps);
-    const x_vals = axX.vals, y_vals = axY.vals;
-
-    if (x_vals.length===0 || y_vals.length===0) throw new Error('No interior grid after edge offset. Reduce offset or spacing.');
-
-    const pts = rows.map(r=>[r.X,r.Y]); const vals = rows.map(r=>r.Z);
-    const W=x_vals.length, H=y_vals.length;
-    let Zg = new Float64Array(W*H);
-
-    update(`Gridding (IDW)… 0/${H}`, 10);
-    for(let j=0;j<H;j++){
-      if (signal?.aborted) throw new DOMException('Aborted','AbortError');
-      const y=y_vals[j];
-      for(let i=0;i<W;i++){
-        const x=x_vals[i];
-        let z = idwInterpolate(pts, vals, x, y, 12, 2);
-        if (Number.isNaN(z)) z = vals[0];
-        Zg[j*W+i]=z;
-      }
-      if (j % 2 === 0) { update(`Gridding (IDW)… ${j+1}/${H}`, 10 + Math.round(50*(j+1)/H)); await nextFrame(); }
-    }
-
-    const kernel = gaussianKernel1D(5);
-    const r=(kernel.length-1)/2, tmp=new Float64Array(Zg.length), out=new Float64Array(Zg.length);
-
-    update('Smoothing (X pass)…', 65);
-    for(let y=0;y<H;y++){
-      if (signal?.aborted) throw new DOMException('Aborted','AbortError');
-      for(let x=0;x<W;x++){
-        let a=0;
-        for(let i=-r;i<=r;i++){ const xx=Math.min(W-1,Math.max(0,x+i)); a+=kernel[i+r]*Zg[y*W+xx]; }
-        tmp[y*W+x]=a;
-      }
-      if (y % 4 === 0) await nextFrame();
-    }
-
-    update('Smoothing (Y pass)…', 78);
-    for(let y=0;y<H;y++){
-      if (signal?.aborted) throw new DOMException('Aborted','AbortError');
-      for(let x=0;x<W;x++){
-        let a=0;
-        for(let j=-r;j<=r;j++){ const yy=Math.min(H-1,Math.max(0,y+j)); a+=kernel[j+r]*tmp[yy*W+x]; }
-        out[y*W+x]=a;
-      }
-      if (y % 4 === 0) await nextFrame();
-    }
-    Zg = out;
-
-    update('Building output…', 90);
-    const grid = [];
-    for(let rI=0;rI<H;rI++){
-      const y=y_vals[rI];
-      for(let cI=0;cI<W;cI++){
-        const x=x_vals[cI]; const z=Zg[rI*W+cI];
-        grid.push([+x.toFixed(4), +y.toFixed(4), z, cI+1, rI+1]);
-      }
-      if (rI % 8 === 0) await nextFrame();
-    }
-    grid.sort((a,b)=> (a[4]-b[4]) || (a[3]-b[3]));
-
-    const x0 = +axX.startBound.toFixed(4), x1 = +axX.endBound.toFixed(4);
-    const y0 = +axY.startBound.toFixed(4), y1 = +axY.endBound.toFixed(4);
-    const header =
-`# Type: scattered data
+    const utm = `+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`, proj = proj4('WGS84', utm);
+    update('Projecting…'); for (let i=0;i<rows.length;i++){ const xy=proj.forward([rows[i].longitude,rows[i].latitude]); rows[i].X=xy[0]; rows[i].Y=xy[1]; if(i%2000===0) await nextFrame(); }
+    const dx=dxdy,dy=dxdy,xmin=Math.min(...rows.map(r=>r.X)),xmax=Math.max(...rows.map(r=>r.X)),ymin=Math.min(...rows.map(r=>r.Y)),ymax=Math.max(...rows.map(r=>r.Y));
+    const axX=makeAxisInner(xmin,xmax,dx,edgeSteps),axY=makeAxisInner(ymin,ymax,dy,edgeSteps); const x_vals=axX.vals,y_vals=axY.vals;
+    if(!x_vals.length||!y_vals.length) throw new Error('No interior grid after edge offset. Reduce offset/spacing.');
+    const pts=rows.map(r=>[r.X,r.Y]),vals=rows.map(r=>r.Z),W=x_vals.length,H=y_vals.length; let Z=new Float64Array(W*H);
+    update('Gridding…'); for(let j=0;j<H;j++){ const y=y_vals[j]; for(let i=0;i<W;i++){ const x=x_vals[i]; let z=idwInterpolate(pts,vals,x,y,12,2); if(Number.isNaN(z)) z=vals[0]; Z[j*W+i]=z; } if(j%2===0) await nextFrame(); }
+    const ker=gaussianKernel1D(5),r=(ker.length-1)/2,tmp=new Float64Array(Z.length),out=new Float64Array(Z.length);
+    update('Smoothing X…'); for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let i=-r;i<=r;i++){ const xx=Math.min(W-1,Math.max(0,x+i)); a+=ker[i+r]*Z[y*W+xx]; } tmp[y*W+x]=a; } if(y%4===0) await nextFrame(); }
+    update('Smoothing Y…'); for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let j=-r;j<=r;j++){ const yy=Math.min(H-1,Math.max(0,y+j)); a+=ker[j+r]*tmp[yy*W+x]; } out[y*W+x]=a; } if(y%4===0) await nextFrame(); }
+    Z=out;
+    const grid=[]; for(let rI=0;rI<H;rI++){ const y=y_vals[rI]; for(let cI=0;cI<W;cI++){ const x=x_vals[cI]; grid.push([+x.toFixed(4),+y.toFixed(4),Z[rI*W+cI],cI+1,rI+1]); } if(rI%8===0) await nextFrame(); }
+    grid.sort((a,b)=> (a[4]-b[4])||(a[3]-b[3]));
+    const x0=+axX.startBound.toFixed(4),x1=+axX.endBound.toFixed(4),y0=+axY.startBound.toFixed(4),y1=+axY.endBound.toFixed(4);
+    const header=`# Type: scattered data
 # Version: 6
 # Description: No description
 # Format: free
@@ -461,7 +336,7 @@
 # Units: meters
 # End:
 # Information from grid:
-# Grid_size: ${W} x ${H}
+# Grid_size: ${x_vals.length} x ${y_vals.length}
 # Grid_space: ${x0},${x1},${y0},${y1}
 # Scattered data: Not_available
 # Z_field: z
@@ -469,176 +344,150 @@
 # History: No history
 # Z_units: meters
 `;
-    const csvBody = grid.map(r => `${r[0]} ${r[1]} ${r[2]} ${r[3]} ${r[4]}`).join('\n');
-    const finalText = header + csvBody;
-    const preview = grid.slice(0,30).map(r=>`${r[0]} ${r[1]} ${r[2].toFixed(3)} ${r[3]} ${r[4]}`).join('\n');
-
-    update('Finalizing…', 98);
-    await nextFrame();
-
-    return { finalText, preview, dims:{x:W,y:H}, bounds:{xmin:x0,xmax:x1,ymin:y0,ymax:y1} };
+    const csv = grid.map(r=>`${r[0]} ${r[1]} ${r[2]} ${r[3]} ${r[4]}`).join('\n');
+    return { finalText: header+csv, preview: grid.slice(0,30).map(r=>`${r[0]} ${r[1]} ${r[2].toFixed(3)} ${r[3]} ${r[4]}`).join('\n'),
+             dims:{x:x_vals.length,y:y_vals.length}, bounds:{xmin:x0,xmax:x1,ymin:y0,ymax:y1} };
   }
 
-  async function runOnce(){
+  async function computeBathymetry(){
+    const lonStart=+els.lonStart.value,lonEnd=+els.lonEnd.value,latStart=+els.latStart.value,latEnd=+els.latEnd.value,zone=+els.zone.value,South=!!els.south.checked;
+    if([lonStart,lonEnd,latStart,latEnd,zone].some(n=>Number.isNaN(n))) throw new Error('All fields must be numbers.');
+    if(lonStart>lonEnd) throw new Error('Longitude start ≤ end.'); if(latStart>latEnd) throw new Error('Latitude start ≤ end.'); if(zone<1||zone>60) throw new Error('UTM zone 1..60.');
+    controller?.abort(); controller=new AbortController();
+    setStatus('Calling GEBCO…');
+    const apiData = await callApi(buildUrl((els.sample.value||'1'), buildRing({lonStart,lonEnd,latStart,latEnd})), controller.signal);
+    els.apiOut.textContent = typeof apiData==='string'? apiData : JSON.stringify(apiData,null,2);
+    setStatus('Processing…');
+    const res = await processDataAsync({apiData,zone,South,dxdy:Math.max(1,+els.dxdy.value||200),edgeSteps:Math.max(0,Math.floor(+els.edge.value||3))}, ()=>{}, controller.signal);
+    els.tabOut.textContent = `# Grid ${res.dims.x} x ${res.dims.y}\n# X:[${res.bounds.xmin.toFixed(4)}, ${res.bounds.xmax.toFixed(4)}]  Y:[${res.bounds.ymin.toFixed(4)}, ${res.bounds.ymax.toFixed(4)}]\n\n${res.preview}`;
+    lastResult = res;
+    setStatus('Ready','ok');
+  }
+  els.btnRun.addEventListener('click', async()=>{ try{ await computeBathymetry(); }catch(e){ setStatus(e?.message||String(e),'err'); } });
+  els.btnDownload.addEventListener('click', ()=>{ try{
+    if(!lastResult) throw new Error('No file yet. Click "Run — GEBCO & Build Grid" first.');
+    const blob=new Blob([lastResult.finalText],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='updated_bathymetry_data_LATLONG.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+  }catch(e){ setStatus(e?.message||String(e),'err'); } });
+
+  /* ---------- FDPlan helpers ---------- */
+  const mask = s => !s ? '' : (s.trim().length<=10 ? s.slice(0,3)+'***' : s.slice(0,6)+'…'+s.slice(-4));
+  const logTo = (el, title, obj) => { const t=new Date().toISOString(); el.textContent += `\n[${t}] ${title}\n` + (obj!=null?(typeof obj==='string'?obj:JSON.stringify(obj,null,2)):'') + `\n`; };
+  function normalizeToken(input){ if (!input) return ''; let t=String(input).trim(); if(/^bearer\s+/i.test(t)) t=t.replace(/^bearer\s+/i,'').trim(); return t; }
+  function buildHeaders({authKey, appKey, partition, contentType}){
+    const h = { 'authorization': `Bearer ${authKey}`, 'appkey': appKey, 'slb-data-partition-id': partition, 'accept': '*/*' };
+    if (contentType) h['content-type'] = contentType;
+    return h;
+  }
+  function logRequest(el, {method,url,headers,body}){
+    const safe={...headers};
+    if (safe.authorization) safe.authorization='Bearer '+mask(String(safe.authorization).replace(/^Bearer\s+/i,''));
+    if (safe.appkey) safe.appkey=mask(safe.appkey);
+    logTo(el, `→ ${method} ${new URL(url).pathname}`, { host:new URL(url).host, headers:safe, body });
+  }
+
+  function ensureFileReady(){ if(!lastResult||!lastResult.finalText) throw new Error('No generated content. Run GEBCO first.'); }
+  function makeGeneratedFile(){ return new File([lastResult.finalText], 'updated_bathymetry_data_LATLONG.txt', {type:'text/plain'}); }
+
+  // Build raw multipart body with explicit boundary like Insomnia
+  function buildMultipartFromFile(file){
+    const boundary = 'X-INSOMNIA-BOUNDARY';
+    const CRLF = '\r\n';
+    const head = `--${boundary}${CRLF}`
+      + `Content-Disposition: form-data; name="uploadFile"; filename="${file.name}"${CRLF}`
+      + `Content-Type: ${file.type || 'text/plain'}${CRLF}${CRLF}`;
+    const tail = `${CRLF}--${boundary}--${CRLF}`;
+    const body = new Blob([head, file, tail]);
+    return { body, contentType: `multipart/form-data; boundary=${boundary}` };
+  }
+
+  function readCreds(){
+    const appKey=(els.fdpAppKey.value||'').trim();
+    const partition=(els.fdpPartition.value||'').trim();
+    const authKey=normalizeToken(els.fdpAuth.value||'');
+    if(!appKey||!partition||!authKey) throw new Error('App Key, Data Partition and Authorization key are required.');
+    return { appKey, partition, authKey };
+  }
+
+  /* ---------- 1) Create Job ---------- */
+  els.btnCreateJob.addEventListener('click', async()=>{
     try{
-      const lonStart = Number(els.lonStart.value);
-      const lonEnd   = Number(els.lonEnd.value);
-      const latStart = Number(els.latStart.value);
-      const latEnd   = Number(els.latEnd.value);
-      const zone     = Number(els.zone.value);
-      const South    = !!els.south.checked;
-
-      if ([lonStart,lonEnd,latStart,latEnd,zone].some(n=>Number.isNaN(n))) throw new Error('All fields must be numbers.');
-      if (lonStart>lonEnd) throw new Error('Longitude start ≤ end.');
-      if (latStart>latEnd) throw new Error('Latitude start ≤ end.');
-      if (zone<1 || zone>60) throw new Error('UTM zone must be 1..60.');
-
-      controller?.abort();
-      controller = new AbortController();
-
-      showOverlay('Calling API…','Requesting data', 2);
-      setStatus('Calling API…');
-
-      const ring = buildRing({lonStart,lonEnd,latStart,latEnd});
-      const url  = buildUrl((els.sample.value || '1'), ring);
-      const apiData = await callApi(url, controller.signal);
-      els.apiOut.textContent = typeof apiData === 'string' ? apiData : JSON.stringify(apiData, null, 2);
-
-      const update = (step, pct)=> setOverlay('Processing…', step, pct);
-      update('Preparing', 5);
-
-      const res = await processDataAsync({
-        apiData, zone, South,
-        dxdy: Math.max(1, Number(els.dxdy.value) || 200),
-        edgeSteps: Math.max(0, Math.floor(Number(els.edge.value) || 3))
-      }, update, controller.signal);
-
-      els.tabOut.textContent =
-        `# Grid ${res.dims.x} x ${res.dims.y}\n` +
-        `# X:[${res.bounds.xmin.toFixed(4)}, ${res.bounds.xmax.toFixed(4)}]  ` +
-        `Y:[${res.bounds.ymin.toFixed(4)}, ${res.bounds.ymax.toFixed(4)}]\n\n` +
-        res.preview;
-
-      setOverlay('Preparing download…','Creating file', 99);
-      await nextFrame();
-
-      const blob = new Blob([res.finalText], {type:'text/plain;charset=utf-8'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download='updated_bathymetry_data_LATLONG';
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-
-      setOverlay('Done','Download started', 100);
-      setStatus('Done. File downloaded.','ok');
-    }catch(e){
-      if (e?.name === 'AbortError'){ setStatus('Canceled.'); }
-      else { setStatus(e?.message || String(e), 'err'); }
-    }finally{
-      setTimeout(()=> hideOverlay(), 400);
-      controller = null;
-    }
-  }
-
-  function openGoogleMapsPins(){
-    const lonStart = Number(els.lonStart.value), lonEnd = Number(els.lonEnd.value);
-    const latStart = Number(els.latStart.value), latEnd = Number(els.latEnd.value);
-    const west = Math.min(lonStart, lonEnd), east = Math.max(lonStart, lonEnd);
-    const south = Math.min(latStart, latEnd), north = Math.max(latStart, latEnd);
-
-    const SW = `${south.toFixed(6)},${west.toFixed(6)}`;
-    const NW = `${north.toFixed(6)},${west.toFixed(6)}`;
-    const NE = `${north.toFixed(6)},${east.toFixed(6)}`;
-    const SE = `${south.toFixed(6)},${east.toFixed(6)}`;
-
-    let url4 = `https://www.google.com/maps/dir/?api=1`
-             + `&origin=${encodeURIComponent(SW)}`
-             + `&destination=${encodeURIComponent(NE)}`
-             + `&waypoints=${encodeURIComponent(NW)}|${encodeURIComponent(SE)}`;
-
-    let url2 = `https://www.google.com/maps/dir/?api=1`
-             + `&origin=${encodeURIComponent(SW)}`
-             + `&destination=${encodeURIComponent(NE)}`;
-
-    const w = window.open(url4, '_blank', 'noopener');
-    if (!w || w.closed || typeof w.closed === 'undefined') {
-      window.open(url2, '_blank', 'noopener');
-    }
-  }
-
-  function renderSchematic(){
-    const lonStart = Number(els.lonStart.value), lonEnd = Number(els.lonEnd.value);
-    const latStart = Number(els.latStart.value), latEnd = Number(els.latEnd.value);
-
-    const W = 640, H = 320;
-    const xFromLon = lon => ((lon + 180) / 360) * W;
-    const yFromLat = lat => ((90 - lat) / 180) * H;
-
-    const xL = xFromLon(Math.min(lonStart, lonEnd));
-    const xR = xFromLon(Math.max(lonStart, lonEnd));
-    const yT = yFromLat(Math.max(latStart, latEnd));
-    const yB = yFromLat(Math.min(latStart, latEnd));
-
-    const minPix = 168;
-    const trueW = Math.max(0, xR - xL);
-    const trueH = Math.max(0, yB - yT);
-    const rectW = Math.max(minPix, trueW);
-    const rectH = Math.max(minPix, trueH);
-
-    const cx = (xL + xR) / 2;
-    const cy = (yT + yB) / 2;
-    let x0 = Math.min(Math.max(0, cx - rectW/2), W - rectW);
-    let y0 = Math.min(Math.max(0, cy - rectH/2), H - rectH);
-
-    const grat = [];
-    for (let lon=-150; lon<=150; lon+=30){
-      const x = xFromLon(lon).toFixed(2);
-      grat.push(`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#dfe8f5" stroke-width="1" />`);
-      grat.push(`<text x="${x}" y="${H-6}" fill="#7a8aa6" font-size="10" text-anchor="middle">${lon}°</text>`);
-    }
-    for (let lat=-60; lat<=60; lat+=30){
-      const y = yFromLat(lat).toFixed(2);
-      grat.push(`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#dfe8f5" stroke-width="1" />`);
-      grat.push(`<text x="6" y="${+y-4}" fill="#7a8aa6" font-size="10">${lat}°</text>`);
-    }
-
-    const stroke = '#1c5991';
-    const fillSel = 'rgba(0,102,204,0.12)';
-
-    const svg = `
-      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="World frame with selection">
-        <rect x="0" y="0" width="${W}" height="${H}" fill="#fff" stroke="#cddbf1"/>
-        ${grat.join('\n')}
-        <rect x="${x0}" y="${y0}" width="${rectW}" height="${rectH}" fill="${fillSel}" stroke="${stroke}" stroke-width="2"/>
-        <line x1="${x0}" y1="0" x2="${x0}" y2="${H}" stroke="${stroke}" stroke-dasharray="4,3"/>
-        <line x1="${x0+rectW}" y1="0" x2="${x0+rectW}" y2="${H}" stroke="${stroke}" stroke-dasharray="4,3"/>
-        <line x1="0" y1="${y0}" x2="${W}" y2="${y0}" stroke="${stroke}" stroke-dasharray="4,3"/>
-        <line x1="0" y1="${y0+rectH}" x2="${W}" y2="${y0+rectH}" stroke="${stroke}" stroke-dasharray="4,3"/>
-        <g font-size="11" fill="#0e2a4f" font-weight="600">
-          <text x="${x0+4}" y="${Math.max(12, y0-8)}">Lon start</text>
-          <text x="${Math.max(4, x0+rectW-56)}" y="${Math.max(12, y0-8)}">Lon end</text>
-          <text x="${Math.min(W-90, x0+6)}" y="${y0+14}">Lat end</text>
-          <text x="${Math.min(W-90, x0+6)}" y="${y0+rectH-6}">Lat start</text>
-        </g>
-        <text x="${W/2}" y="16" text-anchor="middle" fill="#0e2a4f" font-size="12" font-weight="700">
-          Longitude (−180° to 180°) / Latitude (−90° to 90°)
-        </text>
-      </svg>
-    `;
-    els.schematic.innerHTML = svg;
-    requestAnimationFrame(syncOptionalHeight);
-  }
-
-  let t;
-  ['input','change'].forEach(ev=>{
-    [els.lonStart,els.lonEnd,els.latStart,els.latEnd].forEach(inp=>{
-      inp.addEventListener(ev, ()=>{ clearTimeout(t); t=setTimeout(renderSchematic, 60); }, {passive:true});
-    });
+      const {appKey, partition, authKey} = readCreds();
+      const name=(els.fdpName.value||'Bathymetry External').trim();
+      const studyId=(els.fdpStudyId.value||'').trim(); if(!studyId) throw new Error('StudyId is required.');
+      const url='https://br1.api.delfi.slb.com/fdplan/data-sources/v2/data-source-jobs/';
+      const payload={ name, description:`Generated ${new Date().toISOString()}`, source:{type:'test:data-types:gebco-external',store:'Patrick Custom Solution'}, target:{type:'earth-vision-grid'}, tags:[`StudyId:${studyId}`], dataProviders:{items:[{name:'Github',sources:[ 'https://pmachado333.github.io/Bathy_extractor' ],description:'Dumy test'}]} };
+      const headers=buildHeaders({authKey,appKey,partition,contentType:'application/json'});
+      logRequest(els.logJob,{method:'POST',url,headers,body:payload});
+      const res=await fetch(url,{method:'POST',headers,body:JSON.stringify(payload)});
+      const text=await res.text(); let data; try{data=JSON.parse(text)}catch{data=text}
+      logTo(els.logJob, `← ${res.status} job create`, data);
+      if(!res.ok) throw new Error(`Job create failed: ${res.status} ${res.statusText}`);
+      if(!data||!data.id) throw new Error('Missing job id.');
+      savedJobId=data.id; els.jobIdView.textContent=savedJobId;
+    }catch(e){ logTo(els.logJob,'Error', {message:e?.message||String(e)}); }
   });
 
-  document.getElementById('btnCancel').addEventListener('click', ()=>{ controller?.abort(); });
-  document.getElementById('btnRun').addEventListener('click', runOnce);
-  document.getElementById('schematic').addEventListener('click', openGoogleMapsPins);
+  /* ---------- 2) Get Container ---------- */
+  els.btnGetContainer.addEventListener('click', async()=>{
+    try{
+      if(!savedJobId) throw new Error('Run "Create Job" first.');
+      const {appKey, partition, authKey} = readCreds();
+      const url=`https://br1.api.delfi.slb.com/fdplan/events/alpha/v1/cloud-events?type=${encodeURIComponent(FTYPE)}`;
+      const headers=buildHeaders({authKey,appKey,partition});
+      for(let attempt=1; attempt<=6; attempt++){
+        logRequest(els.logEvents,{method:'GET',url,headers});
+        const res=await fetch(url,{headers});
+        const text=await res.text(); let data; try{data=JSON.parse(text)}catch{data=text}
+        logTo(els.logEvents, `← ${res.status} events attempt ${attempt}`, data);
+        if(res.ok && data && Array.isArray(data.events) && data.events.length){
+          let evt=data.events.find(e=>e?.data?.id===savedJobId) || data.events[0];
+          const path=evt?.data?.details?.containers?.[0]?.path;
+          if(path){ savedContainerID=path.replace(/\//g,'%2F'); els.contIdView.textContent=savedContainerID; logTo(els.logEvents,'Found container',{path,containerID:savedContainerID}); return; }
+        }
+        await new Promise(r=>setTimeout(r,2000));
+      }
+      throw new Error('Container path not found.');
+    }catch(e){ logTo(els.logEvents,'Error', {message:e?.message||String(e)}); }
+  });
 
+  /* ---------- 3) Upload File (multipart) ---------- */
+  els.btnUploadFile.addEventListener('click', async()=>{
+    try{
+      if(!savedContainerID) throw new Error('Get Container first.');
+      ensureFileReady();
+      const {appKey, partition, authKey} = readCreds();
+      const file = makeGeneratedFile();
+      const {body, contentType} = buildMultipartFromFile(file); // raw multipart
+      const url=`https://br1.api.delfi.slb.com/fdplan/evaluation/v1/containers/${savedContainerID}/files`;
+      const headers=buildHeaders({authKey,appKey,partition,contentType});
+      // Debug: filename and size
+      logRequest(els.logUpload,{method:'POST',url,headers,body:{multipart:true, field:'uploadFile', filename:file.name, size:file.size, type:file.type}});
+      const res=await fetch(url,{method:'POST',headers,body});
+      const text=await res.text(); let data; try{data=JSON.parse(text)}catch{data=text}
+      logTo(els.logUpload, `← ${res.status} upload`, data);
+      if(!res.ok) throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+    }catch(e){ logTo(els.logUpload,'Error', {message:e?.message||String(e)}); }
+  });
+
+  /* ---------- 4) Set State ---------- */
+  els.btnSetState.addEventListener('click', async()=>{
+    try{
+      if(!savedJobId) throw new Error('Missing jobId. Run "Create Job" first.');
+      const {appKey, partition, authKey} = readCreds();
+      const url=`https://br1.api.delfi.slb.com/fdplan/data-sources/alpha/v2/data-source-jobs/${encodeURIComponent(savedJobId)}/state`;
+      const payload={state:'TransformationCompleted'};
+      const headers=buildHeaders({authKey,appKey,partition,contentType:'application/json'});
+      logRequest(els.logState,{method:'POST',url,headers,body:payload});
+      const res=await fetch(url,{method:'POST',headers,body:JSON.stringify(payload)});
+      const text=await res.text(); let data; try{data=JSON.parse(text)}catch{data=text}
+      logTo(els.logState, `← ${res.status} set state`, data);
+      if(!res.ok) throw new Error(`Set state failed: ${res.status} ${res.statusText}`);
+    }catch(e){ logTo(els.logState,'Error', {message:e?.message||String(e)}); }
+  });
+
+  /* ---------- Wire basics ---------- */
+  let t; ['input','change'].forEach(ev=>[els.lonStart,els.lonEnd,els.latStart,els.latEnd].forEach(inp=>inp.addEventListener(ev,()=>{clearTimeout(t);t=setTimeout(renderSchematic,60)}, {passive:true})));
   setDefaults();
 </script>
 </body>
