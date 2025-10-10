@@ -55,7 +55,7 @@
     .row{display:flex;align-items:center;justify-content:space-between;margin:10px 0 0}.ghost{background:#fff;color:var(--slb);border:1px solid #cfe1f7;box-shadow:none}
     .warn{outline:2px solid #ffcc00;animation:blink .9s 2}@keyframes blink{50%{outline-color:transparent}}
 
-    /* ===== Compact styling only for FDPlan Upload parameters ===== */
+    /* Compact styling only for FDPlan Upload parameters */
     details#fdpParams{padding:6px 8px}
     details#fdpParams > summary{font-size:13px}
     #fdpParams label{font-size:12px;margin-bottom:4px}
@@ -63,7 +63,7 @@
     #fdpParams .row3, #fdpParams .row2{gap:8px}
     #fdpParams .desc{font-size:11px;margin-top:4px}
 
-    /* ===== Tiny footer attribution ===== */
+    /* Tiny footer attribution */
     footer.tiny{max-width:1100px;margin:8px auto 20px;padding:6px 12px 0;border-top:1px solid var(--bd);font-size:10px;line-height:1.25;color:var(--muted);opacity:.9}
     footer.tiny a{color:inherit;text-decoration:underline;word-break:break-all}
   </style>
@@ -289,6 +289,17 @@
     els.fdpName.value=defaults.fdpName;
     renderSchematic();
   }
+
+  function applyQueryParams(){
+    try{
+      const qp=new URLSearchParams(location.search);
+      const studyId=qp.get('studyId');
+      if(studyId){ els.fdpStudyId.value=studyId; log('Prefilled StudyId from URL', studyId); }
+      // leave empty when not present
+    }catch{}
+  }
+  window.addEventListener('popstate', applyQueryParams);
+  window.addEventListener('pageshow', applyQueryParams);
 
   function renderSchematic(){
     const lonS=+els.lonStart.value,lonE=+els.lonEnd.value,latS=+els.latStart.value,latE=+els.latEnd.value;
@@ -557,6 +568,7 @@
 
   function init(){
     setDefaults();
+    applyQueryParams(); // << prefill StudyId from ?studyId=
     safeText($('status'),'Idle');
   }
   init();
