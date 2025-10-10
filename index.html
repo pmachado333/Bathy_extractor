@@ -2,57 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Earth Vision Grid - FDPlan Input Generator</title>
+  <title>GEBCO — Minimal Runner (SLB palette) + Non-blocking Loading</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.js"></script>
   <style>
     :root{
       --slb:#003366; --slb-600:#1c5991; --ink:#0b1320; --muted:#64748b;
-      --bg:#f7f9fc; --card:#ffffff; --bd:#e6eef7; --ok:#0f9d58; --err:#c62828;
-      --r:14px;
+      --bg:#f7f9fc; --card:#ffffff; --bd:#e6eef7; --ok:#0f9d58; --err:#c62828; --r:14px;
     }
-    *{box-sizing:border-box} html,body{height:100%} body{
-      margin:0; font-family:system-ui, Segoe UI, Roboto, Inter, Arial; color:var(--ink); background:var(--bg);
-    }
-    header{background:var(--slb); color:#fff; padding:14px 16px}
-    header .wrap{max-width:960px; margin:0 auto; display:flex; justify-content:space-between; align-items:center}
-    main{max-width:960px; margin:18px auto; padding:0 12px}
-    .card{background:var(--card); border:1px solid var(--bd); border-radius:var(--r); box-shadow:0 6px 24px rgba(0,0,0,.06);}
-    .content{padding:16px}
-    .grid{display:grid; gap:16px}
-    @media (min-width:900px){ .grid-2{grid-template-columns:1fr 1fr} }
-    h1{margin:0; font-size:18px; font-weight:800; letter-spacing:.2px}
-    .sub{opacity:.9; font-size:12px}
-    h2{margin:0 0 6px; font-size:15px}
-    .group{border:1px solid var(--bd); border-radius:12px; padding:12px}
-    .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-    label{display:block; font-weight:600; font-size:13px; margin-bottom:6px; color:#0e2a4f}
-    input[type="number"], input[type="text"]{
-      width:100%; padding:10px 12px; border:1px solid #d7e3f4; border-radius:10px; font-size:14px; background:#fff;
-      outline:none; transition:border .15s, box-shadow .15s;
-    }
-    input:focus{border-color:var(--slb-600); box-shadow:0 0 0 3px rgba(28,89,145,.15)}
-    .desc{margin:6px 0 0; font-size:12px; color:var(--muted)}
-    .switch{display:flex; align-items:center; gap:10px; margin-top:6px}
-    .actions{display:flex; gap:10px; align-items:center; margin-top:8px}
-    button{
-      border:none; background:var(--slb); color:#fff; padding:12px 16px; border-radius:12px; font-weight:800; cursor:pointer;
-      box-shadow:0 8px 18px rgba(0,51,102,.25); transition:filter .15s, transform .06s;
-    }
-    button:hover{filter:brightness(1.05)} button:active{transform:translateY(1px)}
-    .status{min-height:20px; font-size:13px; color:var(--muted)}
-    .status.ok{color:var(--ok)} .status.err{color:var(--err)}
-    details{border-top:1px solid var(--bd); padding:10px 16px}
-    summary{cursor:pointer; font-weight:700; color:#0e3770}
-    pre{background:#0c1b33; color:#e7eefc; border:1px solid #243a67; border-radius:10px; padding:10px; white-space:pre; overflow:auto; font-family:ui-monospace, Menlo, Consolas, monospace; min-height:120px; margin-top:8px}
+    *{box-sizing:border-box} html,body{height:100%} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Inter,Arial;color:var(--ink);background:var(--bg)}
+    header{background:var(--slb);color:#fff;padding:14px 16px}
+    header .wrap{max-width:960px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+    main{max-width:960px;margin:18px auto;padding:0 12px}
+    .card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 6px 24px rgba(0,0,0,.06)}
+    .content{padding:16px}.grid{display:grid;gap:16px}
+    @media (min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}
+    h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px}.sub{opacity:.9;font-size:12px}
+    h2{margin:0 0 6px;font-size:15px}.group{border:1px solid var(--bd);border-radius:12px;padding:12px}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#0e2a4f}
+    input[type="number"],input[type="text"]{width:100%;padding:10px 12px;border:1px solid #d7e3f4;border-radius:10px;font-size:14px;background:#fff;outline:none;transition:border .15s,box-shadow .15s}
+    input:focus{border-color:var(--slb-600);box-shadow:0 0 0 3px rgba(28,89,145,.15)}
+    .desc{margin:6px 0 0;font-size:12px;color:var(--muted)} .switch{display:flex;align-items:center;gap:10px;margin-top:6px}
+    .actions{display:flex;gap:10px;align-items:center;margin-top:8px}
+    button{border:none;background:var(--slb);color:#fff;padding:12px 16px;border-radius:12px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(0,51,102,.25);transition:filter .15s,transform .06s}
+    button:hover{filter:brightness(1.05)}button:active{transform:translateY(1px)}
+    .status{min-height:20px;font-size:13px;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:var(--err)}
+    details{border-top:1px solid var(--bd);padding:10px 16px} summary{cursor:pointer;font-weight:700;color:#0e3770}
+    pre{background:#0c1b33;color:#e7eefc;border:1px solid #243a67;border-radius:10px;padding:10px;white-space:pre;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;min-height:120px;margin-top:8px}
+    /* Loading overlay */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:saturate(120%) blur(2px);display:none;align-items:center;justify-content:center;z-index:9999}
+    .panel{background:#ffffff; border:1px solid var(--bd); border-radius:14px; box-shadow:0 20px 50px rgba(0,0,0,.25); width:min(420px,90vw); padding:16px}
+    .panel h3{margin:0 0 8px; color:#0e2a4f}
+    .progress{height:8px;background:#eef3fb;border-radius:999px;overflow:hidden;border:1px solid #d9e6f6}
+    .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--slb),var(--slb-600))}
+    .row{display:flex;align-items:center;justify-content:space-between;margin:10px 0 0}
+    .ghost{background:#fff;color:var(--slb);border:1px solid #cfe1f7;box-shadow:none}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
   </style>
 </head>
 <body>
   <header>
     <div class="wrap">
       <div>
-        <h1>Earth Vision Grid - FDPlan Input Generator</h1>
-        <div class="sub">by Patrick Machado</div>
+        <h1>GEBCO — Run & Download</h1>
+        <div class="sub">Minimal, responsive, on-brand</div>
       </div>
     </div>
   </header>
@@ -108,18 +102,18 @@
               <div>
                 <label for="sample">sample (integer string)</label>
                 <input id="sample" type="text" inputmode="numeric" />
-                <div class="desc">Resampling parameter for API; leave as “1” unless advised.</div>
+                <div class="desc">Resampling parameter for API; keep “1” unless advised.</div>
               </div>
               <div>
                 <label for="dxdy">Grid spacing (m) — dx=dy</label>
                 <input id="dxdy" type="number" min="1" step="1" />
-                <div class="desc">Cell spacing (meters) in UTM. Larger = coarser grid.</div>
+                <div class="desc">Cell spacing in meters (UTM). Larger = coarser.</div>
               </div>
             </div>
             <div style="margin-top:8px; max-width:260px">
               <label for="edgeSteps">Edge offset (steps)</label>
               <input id="edgeSteps" type="number" min="0" step="1" />
-              <div class="desc">Keep grid a few steps inside the bounds to avoid touching edges.</div>
+              <div class="desc">Keep grid several steps inside bounds; avoids touching edges.</div>
             </div>
           </div>
         </div>
@@ -141,6 +135,21 @@
       </details>
     </section>
   </main>
+
+  <!-- Loading Overlay -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-live="assertive">
+    <div class="panel">
+      <h3 id="ovTitle">Working…</h3>
+      <div class="progress" aria-hidden="true"><div id="ovBar" class="bar"></div></div>
+      <div class="row">
+        <div id="ovStep" class="mono" style="font-size:12px;color:#0e2a4f">Starting…</div>
+        <div>
+          <button id="btnCancel" class="ghost" type="button">Cancel</button>
+        </div>
+      </div>
+      <div id="ovHint" class="desc" style="margin-top:8px">Please keep this tab open until the download starts.</div>
+    </div>
+  </div>
 
 <script>
   // Defaults
@@ -164,6 +173,12 @@
     status:   document.getElementById('status'),
     apiOut:   document.getElementById('apiOut'),
     tabOut:   document.getElementById('tabOut'),
+    overlay:  document.getElementById('overlay'),
+    ovBar:    document.getElementById('ovBar'),
+    ovTitle:  document.getElementById('ovTitle'),
+    ovStep:   document.getElementById('ovStep'),
+    ovHint:   document.getElementById('ovHint'),
+    btnCancel:document.getElementById('btnCancel'),
   };
 
   function setDefaults(){
@@ -179,31 +194,30 @@
   }
   function setStatus(msg, kind){ els.status.textContent = msg; els.status.className = 'status ' + (kind || ''); }
 
+  // Non-blocking helpers
+  const nextFrame = () => new Promise(r => requestAnimationFrame(r));
+  function showOverlay(title, step, pct){ els.overlay.style.display='flex'; setOverlay(title, step, pct); window.addEventListener('beforeunload', warnUnload); }
+  function hideOverlay(){ els.overlay.style.display='none'; window.removeEventListener('beforeunload', warnUnload); }
+  function setOverlay(title, step, pct){ if(title) els.ovTitle.textContent=title; if(step) els.ovStep.textContent=step; if(pct!=null) els.ovBar.style.width = Math.max(0, Math.min(100, pct)) + '%'; }
+  function warnUnload(e){ e.preventDefault(); e.returnValue='Processing… please wait.'; }
+
   // Build polygon URL
   function buildRing({lonStart,lonEnd,latStart,latEnd}){
-    return [
-      [lonStart, latStart],
-      [lonStart, latEnd],
-      [lonEnd,   latEnd],
-      [lonEnd,   latStart],
-      [lonStart, latStart]
-    ];
+    return [[lonStart,latStart],[lonStart,latEnd],[lonEnd,latEnd],[lonEnd,latStart],[lonStart,latStart]];
   }
   function buildUrl(sample, ring){
     const poly = { type:'Polygon', coordinates:[ ring ] };
     const jsonsrc = encodeURIComponent(JSON.stringify(poly));
     return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;
   }
-
-  // Networking
-  async function callApi(url){
-    const res = await fetch(url, { headers: { accept:'application/json' } });
+  async function callApi(url, signal){
+    const res = await fetch(url, { headers: { accept:'application/json' }, signal });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const txt = await res.text();
     try { return JSON.parse(txt); } catch { return txt; }
   }
 
-  // Math / processing
+  // Math / processing (with yielding + progress)
   function makeAxisInner(min, max, step, edgeSteps){
     const eps=1e-9, pad=Math.max(0, edgeSteps|0)*step;
     const startBound=min+pad, endBound=max-pad;
@@ -218,14 +232,8 @@
     for(const i of idxs){ const dx=points[i][0]-qx, dy=points[i][1]-qy; const d2=dx*dx+dy*dy; if (d2<eps) return values[i]; const w=1/Math.pow(d2,power/2); num+=w*values[i]; den+=w; }
     return den>0 ? num/den : NaN;
   }
-  function nearest(points, values, qx, qy){ let bi=-1, bd=Infinity; for(let i=0;i<points.length;i++){ const dx=points[i][0]-qx, dy=points[i][1]-qy, d=dx*dx+dy*dy; if(d<bd){bd=d;bi=i;} } return values[bi]; }
   function gaussianKernel1D(sigma){ const r=Math.max(1,Math.floor(sigma*3)); const k=[]; let s=0, s2=2*sigma*sigma; for(let i=-r;i<=r;i++){ const v=Math.exp(-(i*i)/s2); k.push(v); s+=v;} return k.map(v=>v/s); }
-  function convolveSeparable2D(Z, W, H, kernel){
-    const r=(kernel.length-1)/2, tmp=new Float64Array(Z.length), out=new Float64Array(Z.length);
-    for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let i=-r;i<=r;i++){ const xx=Math.min(W-1,Math.max(0,x+i)); a+=kernel[i+r]*Z[y*W+xx]; } tmp[y*W+x]=a; } }
-    for(let y=0;y<H;y++){ for(let x=0;x<W;x++){ let a=0; for(let j=-r;j<=r;j++){ const yy=Math.min(H-1,Math.max(0,y+j)); a+=kernel[j+r]*tmp[yy*W+x]; } out[y*W+x]=a; } }
-    return out;
-  }
+
   function normalizeApiData(apiData){
     if (apiData && Array.isArray(apiData.longitude) && Array.isArray(apiData.latitude) && Array.isArray(apiData.z)) {
       const L = Math.min(apiData.longitude.length, apiData.latitude.length, apiData.z.length);
@@ -247,12 +255,20 @@
     throw new Error('Unexpected API format (need longitude[], latitude[], z[]).');
   }
 
-  function processData({ apiData, zone, South, dxdy, edgeSteps }){
+  async function processDataAsync({ apiData, zone, South, dxdy, edgeSteps }, update, signal){
+    if (signal?.aborted) throw new DOMException('Aborted','AbortError');
     const rows = normalizeApiData(apiData);
 
     const utm = `+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`;
     const proj = proj4('WGS84', utm);
-    rows.forEach(r => { const xy = proj.forward([r.longitude, r.latitude]); r.X=xy[0]; r.Y=xy[1]; });
+
+    // Project with yielding
+    update('Projecting coordinates…', 5);
+    for (let i=0;i<rows.length;i++){
+      if (signal?.aborted) throw new DOMException('Aborted','AbortError');
+      const r=rows[i]; const xy = proj.forward([r.longitude, r.latitude]); r.X=xy[0]; r.Y=xy[1];
+      if (i % 2000 === 0) await nextFrame();
+    }
 
     const dx=dxdy, dy=dxdy;
     const x_min = Math.min(...rows.map(r=>r.X)), x_max = Math.max(...rows.map(r=>r.X));
@@ -261,28 +277,66 @@
     const axY = makeAxisInner(y_min, y_max, dy, edgeSteps);
     const x_vals = axX.vals, y_vals = axY.vals;
 
-    if (x_vals.length===0 || y_vals.length===0) {
-      throw new Error('No interior grid after edge offset. Reduce offset or spacing.');
-    }
+    if (x_vals.length===0 || y_vals.length===0) throw new Error('No interior grid after edge offset. Reduce offset or spacing.');
 
     const pts = rows.map(r=>[r.X,r.Y]); const vals = rows.map(r=>r.Z);
     const W=x_vals.length, H=y_vals.length;
     let Zg = new Float64Array(W*H);
-    for(let j=0;j<H;j++){ const y=y_vals[j];
-      for(let i=0;i<W;i++){ const x=x_vals[i];
+
+    // IDW fill with yielding per row
+    update(`Gridding (IDW)… 0/${H}`, 10);
+    for(let j=0;j<H;j++){
+      if (signal?.aborted) throw new DOMException('Aborted','AbortError');
+      const y=y_vals[j];
+      for(let i=0;i<W;i++){
+        const x=x_vals[i];
         let z = idwInterpolate(pts, vals, x, y, 12, 2);
-        if (Number.isNaN(z)) z = nearest(pts, vals, x, y);
+        if (Number.isNaN(z)) z = vals[0]; // tiny fallback; nearest is costly here
         Zg[j*W+i]=z;
       }
+      if (j % 2 === 0) { update(`Gridding (IDW)… ${j+1}/${H}`, 10 + Math.round(50*(j+1)/H)); await nextFrame(); }
     }
-    const kernel = gaussianKernel1D(5);
-    Zg = convolveSeparable2D(Zg, W, H, kernel);
 
-    const grid = [];
-    for(let r=0;r<H;r++){ const y=y_vals[r];
-      for(let c=0;c<W;c++){ const x=x_vals[c]; const z=Zg[r*W+c];
-        grid.push([+x.toFixed(4), +y.toFixed(4), z, c+1, r+1]);
+    // Nearest refinement for NaNs (rare)
+    for(let k=0;k<Zg.length;k++){ if (Number.isNaN(Zg[k])) Zg[k]=0; }
+
+    // Gaussian smoothing with two separable passes, yielding per row/col
+    const kernel = gaussianKernel1D(5);
+    const r=(kernel.length-1)/2, tmp=new Float64Array(Zg.length), out=new Float64Array(Zg.length);
+
+    update('Smoothing (X pass)…', 65);
+    for(let y=0;y<H;y++){
+      if (signal?.aborted) throw new DOMException('Aborted','AbortError');
+      for(let x=0;x<W;x++){
+        let a=0;
+        for(let i=-r;i<=r;i++){ const xx=Math.min(W-1,Math.max(0,x+i)); a+=kernel[i+r]*Zg[y*W+xx]; }
+        tmp[y*W+x]=a;
       }
+      if (y % 4 === 0) await nextFrame();
+    }
+
+    update('Smoothing (Y pass)…', 78);
+    for(let y=0;y<H;y++){
+      if (signal?.aborted) throw new DOMException('Aborted','AbortError');
+      for(let x=0;x<W;x++){
+        let a=0;
+        for(let j=-r;j<=r;j++){ const yy=Math.min(H-1,Math.max(0,y+j)); a+=kernel[j+r]*tmp[yy*W+x]; }
+        out[y*W+x]=a;
+      }
+      if (y % 4 === 0) await nextFrame();
+    }
+    Zg = out;
+
+    // Build rows and header
+    update('Building output…', 90);
+    const grid = [];
+    for(let rI=0;rI<H;rI++){
+      const y=y_vals[rI];
+      for(let cI=0;cI<W;cI++){
+        const x=x_vals[cI]; const z=Zg[rI*W+cI];
+        grid.push([+x.toFixed(4), +y.toFixed(4), z, cI+1, rI+1]);
+      }
+      if (rI % 8 === 0) await nextFrame();
     }
     grid.sort((a,b)=> (a[4]-b[4]) || (a[3]-b[3]));
 
@@ -314,36 +368,47 @@
     const finalText = header + csvBody;
     const preview = grid.slice(0,30).map(r=>`${r[0]} ${r[1]} ${r[2].toFixed(3)} ${r[3]} ${r[4]}`).join('\n');
 
+    update('Finalizing…', 98);
+    await nextFrame();
+
     return { finalText, preview, dims:{x:W,y:H}, bounds:{xmin:x0,xmax:x1,ymin:y0,ymax:y1} };
   }
 
-  // Orchestration
+  // Orchestration with overlay + cancel
+  let controller = null;
   async function runOnce(){
     try{
-      setStatus('Calling API…');
+      // Read & validate inputs
       const lonStart = Number(els.lonStart.value);
       const lonEnd   = Number(els.lonEnd.value);
       const latStart = Number(els.latStart.value);
       const latEnd   = Number(els.latEnd.value);
       const zone     = Number(els.zone.value);
       const South    = !!els.south.checked;
-
       if ([lonStart,lonEnd,latStart,latEnd,zone].some(n=>Number.isNaN(n))) throw new Error('All fields must be numbers.');
       if (lonStart>lonEnd) throw new Error('Longitude start ≤ end.');
       if (latStart>latEnd) throw new Error('Latitude start ≤ end.');
       if (zone<1 || zone>60) throw new Error('UTM zone must be 1..60.');
 
+      controller?.abort();
+      controller = new AbortController();
+
+      showOverlay('Calling API…','Requesting data', 2);
+      els.status.textContent = 'Calling API…';
+
       const ring = buildRing({lonStart,lonEnd,latStart,latEnd});
       const url  = buildUrl(els.sample.value || '1', ring);
-      const apiData = await callApi(url);
+      const apiData = await callApi(url, controller.signal);
       els.apiOut.textContent = typeof apiData === 'string' ? apiData : JSON.stringify(apiData, null, 2);
 
-      setStatus('Processing…');
-      const res = processData({
+      const update = (step, pct)=> setOverlay('Processing…', step, pct);
+      update('Preparing', 5);
+
+      const res = await processDataAsync({
         apiData, zone, South,
         dxdy: Math.max(1, Number(els.dxdy.value) || 200),
         edgeSteps: Math.max(0, Math.floor(Number(els.edge.value) || 3))
-      });
+      }, update, controller.signal);
 
       els.tabOut.textContent =
         `# Grid ${res.dims.x} x ${res.dims.y}\n` +
@@ -351,17 +416,30 @@
         `Y:[${res.bounds.ymin.toFixed(4)}, ${res.bounds.ymax.toFixed(4)}]\n\n` +
         res.preview;
 
+      setOverlay('Preparing download…','Creating file', 99);
+      await nextFrame();
+
       const blob = new Blob([res.finalText], {type:'text/plain;charset=utf-8'});
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='updated_bathymetry_data_LATLONG';
       document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
 
-      setStatus('Done. File downloaded.', 'ok');
+      setOverlay('Done','Download started', 100);
+      els.status.textContent = 'Done. File downloaded.'; els.status.className='status ok';
     }catch(e){
-      setStatus(e?.message || String(e), 'err');
+      if (e?.name === 'AbortError'){ els.status.textContent='Canceled.'; els.status.className='status'; }
+      else { els.status.textContent = e?.message || String(e); els.status.className='status err'; }
+    }finally{
+      // give a moment so user sees 100%
+      setTimeout(()=> hideOverlay(), 400);
+      controller = null;
     }
   }
 
-  els.run.addEventListener('click', runOnce);
+  // Cancel button
+  els.btnCancel.addEventListener('click', ()=>{ controller?.abort(); });
+
+  // Wire
+  document.getElementById('btnRun').addEventListener('click', runOnce);
   setDefaults();
 </script>
 </body>
