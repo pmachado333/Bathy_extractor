@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FDPlan • Create Data Source Job</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+</head>
+<body>
+<h2>Create Data Source Job</h2>
+
+<form id="jobForm">
+  <div>
+    <label>Endpoint
+      <input id="endpoint" type="url" style="width:600px"
+             value="https://api.delfi.slb.com/fdplan/data-sources/alpha/v2/data-source-jobs/" required>
+    </label>
+  </div>
+  <div>
+    <label>Bearer token
+      <input id="token" type="password" required placeholder="eyJhbGciOi...">
+    </label>
+  </div>
+  <div>
+    <label>appkey
+      <input id="appkey" type="text" required placeholder="your-app-key">
+    </label>
+  </div>
+  <div>
+    <label>slb-data-partition-id
+      <input id="partition" type="text" required placeholder="your-partition-id">
+    </label>
+  </div>
+  <hr>
+  <div>
+    <label>Name
+      <input id="name" type="text" value="New data source" required>
+    </label>
+  </div>
+  <div>
+    <label>StudyId (value only)
+      <input id="studyId" type="text" value="01GBYNVRMR63VR037PGG6WW0G8" required>
+    </label>
+  </div>
+  <div>
+    <label>Source type
+      <input id="sourceType" type="text" value="test:data-types:data-flow-schedule" required>
+    </label>
+  </div>
+  <div>
+    <label>Source store
+      <input id="sourceStore" type="text" value="data-flow" required>
+    </label>
+  </div>
+  <div>
+    <label>Target type
+      <input id="targetType" type="text" value="production-events" required>
+    </label>
+  </div>
+  <div>
+    <label>Provider name
+      <input id="providerName" type="text" value="Base" required>
+    </label>
+  </div>
+  <div>
+    <label>File (we’ll send its name in sources[])
+      <input id="fileInput" type="file" required>
+    </label>
+  </div>
+
+  <button type="submit">Create Job</button>
+</form>
+
+<pre id="out" style="white-space:pre-wrap;border:1px solid #ccc;padding:8px;margin-top:12px"></pre>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const out = $("out");
+
+function buildBody(fileName){
+  return {
+    name: $("name").value,
+    description: "aaaaaaaaa",
+    source: { type: $("sourceType").value, store: $("sourceStore").value },
+    target: { type: $("targetType").value },
+    tags: [`StudyId:${$("studyId").value}`],
+    dataProviders: {
+      items: [{ name: $("providerName").value, sources: [fileName], description: "aaaaaaaaaa" }]
+    }
+  };
+}
+
+$("jobForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  out.textContent = "Sending…";
+
+  const endpoint = $("endpoint").value.trim();
+  const token = $("token").value.trim();
+  const appkey = $("appkey").value.trim();
+  const partition = $("partition").value.trim();
+  const fileEl = $("fileInput");
+  if (!fileEl.files.length) { out.textContent = "Select a file."; return; }
+
+  const fileName = fileEl.files[0].name; // browsers won’t reveal absolute path
+  const body = buildBody(fileName);
+
+  try {
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "appkey": appkey,
+        "slb-data-partition-id": partition
+        // "User-Agent": "insomnia/11.3.0"  // <-- cannot be set by browsers
+      },
+      body: JSON.stringify(body)
+    });
+
+    const text = await r.text();
+    let parsed; try { parsed = JSON.parse(text); } catch { parsed = text; }
+    out.textContent = `HTTP ${r.status} ${r.statusText}\n\n` +
+      (typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2));
+  } catch (err) {
+    out.textContent = "Network/CORS error: " + err;
+  }
+});
+</script>
+</body>
+</html>
