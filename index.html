@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>GEBCO — Minimal Runner (SLB palette) + Non-blocking Loading</title>
+  <title>Earth Vision Grid - FDPlan Input Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/proj4@2.10.0/dist/proj4.js"></script>
   <style>
@@ -17,7 +17,8 @@
     .card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 6px 24px rgba(0,0,0,.06)}
     .content{padding:16px}.grid{display:grid;gap:16px}
     @media (min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}
-    h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px}.sub{opacity:.9;font-size:12px}
+    h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px}
+    .sub{opacity:.9;font-size:12px}
     h2{margin:0 0 6px;font-size:15px}.group{border:1px solid var(--bd);border-radius:12px;padding:12px}
     .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#0e2a4f}
@@ -30,7 +31,6 @@
     .status{min-height:20px;font-size:13px;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:var(--err)}
     details{border-top:1px solid var(--bd);padding:10px 16px} summary{cursor:pointer;font-weight:700;color:#0e3770}
     pre{background:#0c1b33;color:#e7eefc;border:1px solid #243a67;border-radius:10px;padding:10px;white-space:pre;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace;min-height:120px;margin-top:8px}
-    /* Loading overlay */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:saturate(120%) blur(2px);display:none;align-items:center;justify-content:center;z-index:9999}
     .panel{background:#ffffff; border:1px solid var(--bd); border-radius:14px; box-shadow:0 20px 50px rgba(0,0,0,.25); width:min(420px,90vw); padding:16px}
     .panel h3{margin:0 0 8px; color:#0e2a4f}
@@ -45,8 +45,8 @@
   <header>
     <div class="wrap">
       <div>
-        <h1>GEBCO — Run & Download</h1>
-        <div class="sub">Minimal, responsive, on-brand</div>
+        <h1>Earth Vision Grid - FDPlan Input Generator</h1>
+        <div class="sub">by Patrick Machado</div>
       </div>
     </div>
   </header>
@@ -201,7 +201,6 @@
   function setOverlay(title, step, pct){ if(title) els.ovTitle.textContent=title; if(step) els.ovStep.textContent=step; if(pct!=null) els.ovBar.style.width = Math.max(0, Math.min(100, pct)) + '%'; }
   function warnUnload(e){ e.preventDefault(); e.returnValue='Processing… please wait.'; }
 
-  // Build polygon URL
   function buildRing({lonStart,lonEnd,latStart,latEnd}){
     return [[lonStart,latStart],[lonStart,latEnd],[lonEnd,latEnd],[lonEnd,latStart],[lonStart,latStart]];
   }
@@ -217,7 +216,6 @@
     try { return JSON.parse(txt); } catch { return txt; }
   }
 
-  // Math / processing (with yielding + progress)
   function makeAxisInner(min, max, step, edgeSteps){
     const eps=1e-9, pad=Math.max(0, edgeSteps|0)*step;
     const startBound=min+pad, endBound=max-pad;
@@ -262,7 +260,6 @@
     const utm = `+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`;
     const proj = proj4('WGS84', utm);
 
-    // Project with yielding
     update('Projecting coordinates…', 5);
     for (let i=0;i<rows.length;i++){
       if (signal?.aborted) throw new DOMException('Aborted','AbortError');
@@ -283,7 +280,6 @@
     const W=x_vals.length, H=y_vals.length;
     let Zg = new Float64Array(W*H);
 
-    // IDW fill with yielding per row
     update(`Gridding (IDW)… 0/${H}`, 10);
     for(let j=0;j<H;j++){
       if (signal?.aborted) throw new DOMException('Aborted','AbortError');
@@ -291,16 +287,12 @@
       for(let i=0;i<W;i++){
         const x=x_vals[i];
         let z = idwInterpolate(pts, vals, x, y, 12, 2);
-        if (Number.isNaN(z)) z = vals[0]; // tiny fallback; nearest is costly here
+        if (Number.isNaN(z)) z = vals[0];
         Zg[j*W+i]=z;
       }
       if (j % 2 === 0) { update(`Gridding (IDW)… ${j+1}/${H}`, 10 + Math.round(50*(j+1)/H)); await nextFrame(); }
     }
 
-    // Nearest refinement for NaNs (rare)
-    for(let k=0;k<Zg.length;k++){ if (Number.isNaN(Zg[k])) Zg[k]=0; }
-
-    // Gaussian smoothing with two separable passes, yielding per row/col
     const kernel = gaussianKernel1D(5);
     const r=(kernel.length-1)/2, tmp=new Float64Array(Zg.length), out=new Float64Array(Zg.length);
 
@@ -327,7 +319,6 @@
     }
     Zg = out;
 
-    // Build rows and header
     update('Building output…', 90);
     const grid = [];
     for(let rI=0;rI<H;rI++){
@@ -378,7 +369,6 @@
   let controller = null;
   async function runOnce(){
     try{
-      // Read & validate inputs
       const lonStart = Number(els.lonStart.value);
       const lonEnd   = Number(els.lonEnd.value);
       const latStart = Number(els.latStart.value);
@@ -429,16 +419,12 @@
       if (e?.name === 'AbortError'){ els.status.textContent='Canceled.'; els.status.className='status'; }
       else { els.status.textContent = e?.message || String(e); els.status.className='status err'; }
     }finally{
-      // give a moment so user sees 100%
       setTimeout(()=> hideOverlay(), 400);
       controller = null;
     }
   }
 
-  // Cancel button
   els.btnCancel.addEventListener('click', ()=>{ controller?.abort(); });
-
-  // Wire
   document.getElementById('btnRun').addEventListener('click', runOnce);
   setDefaults();
 </script>
