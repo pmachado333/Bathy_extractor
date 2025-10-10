@@ -1,6 +1,6 @@
 # Earth Vision Grid — FDPlan Input Generator
 
-Single-page app that:
+Sgitingle-page app that:
 1) takes geographic bounds + projection params,
 2) calls the **GEBCO** bathymetry API proxied by **ODB**,
 3) projects to UTM, grids, smooths, and
@@ -77,7 +77,7 @@ Single-page app that:
 ## Output file
 
 - **Filename:** `updated_bathymetry_data_LATLONG`
-- **Format:** TEart Vision Grid
+- **Format:** Earth Vision Grid
 
 
 - **Bounds safety:** axes are contracted by `Edge offset (steps) * grid spacing` to keep all grid points strictly inside the bounds.
