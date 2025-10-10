@@ -62,6 +62,10 @@
     #fdpParams input[type="text"], #fdpParams input[type="number"]{padding:6px 8px;font-size:12px;border-radius:8px}
     #fdpParams .row3, #fdpParams .row2{gap:8px}
     #fdpParams .desc{font-size:11px;margin-top:4px}
+
+    /* ===== Tiny footer attribution ===== */
+    footer.tiny{max-width:1100px;margin:8px auto 20px;padding:6px 12px 0;border-top:1px solid var(--bd);font-size:10px;line-height:1.25;color:var(--muted);opacity:.9}
+    footer.tiny a{color:inherit;text-decoration:underline;word-break:break-all}
   </style>
 </head>
 <body>
@@ -78,6 +82,7 @@
     <section class="card">
       <div class="content">
         <div class="grid-layout">
+          <!-- Coordinates -->
           <div class="group coords">
             <h2>Coordinates</h2>
             <div class="row2">
@@ -106,6 +111,7 @@
             </div>
           </div>
 
+          <!-- Map schematic -->
           <div class="group schem">
             <div class="schematic-title"><h2>Map schematic</h2></div>
             <div class="schematic-wrap">
@@ -114,6 +120,7 @@
             <div class="desc" style="text-align:center;margin-top:6px">Click to open Google Maps with the 4 corner pins.</div>
           </div>
 
+          <!-- Projection + actions -->
           <div class="group proj" id="projectionBox">
             <h2>Projection</h2>
             <div class="row2">
@@ -135,6 +142,7 @@
             </div>
           </div>
 
+          <!-- Right column: Advanced + FDPlan params -->
           <div class="right">
             <div class="stack">
               <details id="optParams">
@@ -193,6 +201,7 @@
             </div>
           </div>
 
+          <!-- Single log strip -->
           <div class="group logs">
             <details id="logs">
               <summary>Logs</summary>
@@ -204,6 +213,20 @@
     </section>
   </main>
 
+  <!-- Tiny footer attribution -->
+  <footer class="tiny">
+    <div>
+      <strong>Attribution</strong><br>
+      <em>Data source</em><br>
+      GEBCO Compilation Group (2023) GEBCO 2023 Grid (doi:10.5285/f98b053b-0cbc-6c23-e053-6c86abc0af7b)<br>
+      <a href="https://www.gebco.net/data_and_products/gridded_bathymetry_data/" target="_blank" rel="noopener">https://www.gebco.net/data_and_products/gridded_bathymetry_data/</a><br><br>
+      <em>API provider</em><br>
+      This API is compiled by Ocean Data Bank (ODB):<br>
+      Ocean Data Bank, National Science and Technology Council, Taiwan. <a href="https://doi.org/10.5281/zenodo.7512112" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.7512112</a>. Retrieved 2025-10-10 from <code>api.odb.ntu.edu.tw/gebco</code>. v1.0.
+    </div>
+  </footer>
+
+  <!-- Overlay -->
   <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-live="assertive">
     <div class="panel">
       <h3 id="ovTitle">Working…</h3>
@@ -244,7 +267,7 @@
     overlay:$('overlay'),ovBar:$('ovBar'),ovTitle:$('ovTitle'),ovStep:$('ovStep'),btnCancel:$('btnCancel')
   };
 
-  let controller=null,lastResult=null,savedJobId=null,savedContainerID=null;
+  let controller=null,lastResult=null;
 
   function showOverlay(title,step,pct){els.overlay.style.display='flex';setOverlay(title,step,pct);addEventListener('beforeunload',warnUnload)}
   function hideOverlay(){els.overlay.style.display='none';removeEventListener('beforeunload',warnUnload)}
@@ -253,7 +276,6 @@
   els.btnCancel.addEventListener?.('click',()=>{controller?.abort();hideOverlay()});
 
   function setStatus(msg,kind){safeText(els.status,msg);safeClass(els.status,'status '+(kind||''));}
-
   function log(title, obj){
     const t=new Date().toISOString();
     els.logAll.textContent += `[${t}] ${title}\n` + (obj!=null?(typeof obj==='string'?obj:JSON.stringify(obj,null,2)):'') + `\n`;
@@ -386,7 +408,7 @@
     lastResult=res; setStatus('Ready','ok'); return res;
   }
 
-  document.getElementById('btnDownload')?.addEventListener('click', async()=>{
+  $('btnDownload')?.addEventListener('click', async()=>{
     try{
       showOverlay('Preparing file…','Checking',8);
       if(!lastResult) await computeBathymetry();
@@ -505,7 +527,7 @@
     return data;
   }
 
-  document.getElementById('btnRunAll')?.addEventListener('click', async()=>{
+  $('btnRunAll')?.addEventListener('click', async()=>{
     try{
       const creds=readCreds({strict:true});
 
