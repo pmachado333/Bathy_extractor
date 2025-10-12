@@ -15,17 +15,15 @@
     .card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 6px 24px rgba(0,0,0,.06)}
     .content{padding:16px}
     .grid-layout{display:grid;gap:16px;grid-template-columns:1.15fr .85fr;grid-template-areas:
-      "coords schematic"
-      "proj right"
-      "logs logs"}
+      "coords schematic" "proj right" "logs logs"}
     @media (max-width:979px){.grid-layout{grid-template-columns:1fr;grid-template-areas:"coords" "schematic" "proj" "right" "logs"}}
     .group{border:1px solid var(--bd);border-radius:12px;padding:12px;background:#fff}
     .coords{grid-area:coords}.schem{grid-area:schematic}.proj{grid-area:proj}.right{grid-area:right}.logs{grid-area:logs}
     h2{margin:0 0 6px;font-size:15px}
     .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#0e2a4f}
-    input[type="number"],input[type="text"]{width:100%;padding:10px 12px;border:1px solid #d7e3f4;border-radius:10px;font-size:14px;outline:none;transition:border .15s,box-shadow .15s}
-    input:focus{border-color:var(--slb-600);box-shadow:0 0 0 3px rgba(28,89,145,.15)}
+    input[type="number"],input[type="text"],select{width:100%;padding:10px 12px;border:1px solid #d7e3f4;border-radius:10px;font-size:14px;outline:none;transition:border .15s,box-shadow .15s}
+    input:focus,select:focus{border-color:var(--slb-600);box-shadow:0 0 0 3px rgba(28,89,145,.15)}
     .switch{display:flex;align-items:center;gap:10px;margin-top:6px}
     .desc{margin:6px 0 0;font-size:12px;color:var(--muted)}
     .actions{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
@@ -54,16 +52,11 @@
     .progress{height:8px;background:#eef3fb;border-radius:999px;overflow:hidden;border:1px solid #d9e6f6}.bar{height:100%;width:0%;background:linear-gradient(90deg,var(--slb),var(--slb-600))}
     .row{display:flex;align-items:center;justify-content:space-between;margin:10px 0 0}.ghost{background:#fff;color:var(--slb);border:1px solid #cfe1f7;box-shadow:none}
     .warn{outline:2px solid #ffcc00;animation:blink .9s 2}@keyframes blink{50%{outline-color:transparent}}
-
-    /* Compact styling only for FDPlan Upload parameters */
-    details#fdpParams{padding:6px 8px}
-    details#fdpParams > summary{font-size:13px}
+    details#fdpParams{padding:6px 8px}details#fdpParams > summary{font-size:13px}
     #fdpParams label{font-size:12px;margin-bottom:4px}
     #fdpParams input[type="text"], #fdpParams input[type="number"]{padding:6px 8px;font-size:12px;border-radius:8px}
     #fdpParams .row3, #fdpParams .row2{gap:8px}
     #fdpParams .desc{font-size:11px;margin-top:4px}
-
-    /* Tiny footer attribution */
     footer.tiny{max-width:1100px;margin:8px auto 20px;padding:6px 12px 0;border-top:1px solid var(--bd);font-size:10px;line-height:1.25;color:var(--muted);opacity:.9}
     footer.tiny a{color:inherit;text-decoration:underline;word-break:break-all}
   </style>
@@ -82,9 +75,17 @@
     <section class="card">
       <div class="content">
         <div class="grid-layout">
-          <!-- Coordinates -->
           <div class="group coords">
             <h2>Coordinates</h2>
+            <div class="row2" style="margin-bottom:6px">
+              <div>
+                <label for="offshore">Offshore Field/Block</label>
+                <select id="offshore">
+                  <option value="">— Select field/block —</option>
+                </select>
+                <div class="desc">Selecting fills Lon/Lat bounds, UTM zone, and South flag.</div>
+              </div>
+            </div>
             <div class="row2">
               <div>
                 <label for="lonStart">Longitude start</label>
@@ -111,7 +112,6 @@
             </div>
           </div>
 
-          <!-- Map schematic -->
           <div class="group schem">
             <div class="schematic-title"><h2>Map schematic</h2></div>
             <div class="schematic-wrap">
@@ -120,7 +120,6 @@
             <div class="desc" style="text-align:center;margin-top:6px">Click to open Google Maps with the 4 corner pins.</div>
           </div>
 
-          <!-- Projection + actions -->
           <div class="group proj" id="projectionBox">
             <h2>Projection</h2>
             <div class="row2">
@@ -134,7 +133,6 @@
                 <label for="south">South Hemisphere</label>
               </div>
             </div>
-
             <div class="actions">
               <button id="btnDownload" type="button" class="secondary">Download Grid File</button>
               <button id="btnRunAll" type="button">Run & Upload to FDPlan</button>
@@ -142,7 +140,6 @@
             </div>
           </div>
 
-          <!-- Right column: Advanced + FDPlan params -->
           <div class="right">
             <div class="stack">
               <details id="optParams">
@@ -201,7 +198,6 @@
             </div>
           </div>
 
-          <!-- Single log strip -->
           <div class="group logs">
             <details id="logs">
               <summary>Logs</summary>
@@ -213,7 +209,6 @@
     </section>
   </main>
 
-  <!-- Tiny footer attribution -->
   <footer class="tiny">
     <div>
       <strong>Attribution</strong><br>
@@ -221,12 +216,10 @@
       GEBCO Compilation Group (2023) GEBCO 2023 Grid (doi:10.5285/f98b053b-0cbc-6c23-e053-6c86abc0af7b)<br>
       <a href="https://www.gebco.net/data_and_products/gridded_bathymetry_data/" target="_blank" rel="noopener">https://www.gebco.net/data_and_products/gridded_bathymetry_data/</a><br><br>
       <em>API provider</em><br>
-      This API is compiled by Ocean Data Bank (ODB):<br>
-      Ocean Data Bank, National Science and Technology Council, Taiwan. <a href="https://doi.org/10.5281/zenodo.7512112" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.7512112</a>. Retrieved 2025-10-10 from <code>api.odb.ntu.edu.tw/gebco</code>. v1.0.
+      Ocean Data Bank, National Science and Technology Council, Taiwan. <a href="https://doi.org/10.5281/zenodo.7512112" target="_blank" rel="noopener">https://doi.org/10.5281/zenodo.7512112</a>.
     </div>
   </footer>
 
-  <!-- Overlay -->
   <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-live="assertive">
     <div class="panel">
       <h3 id="ovTitle">Working…</h3>
@@ -240,6 +233,7 @@
   </div>
 
 <script>
+  // --- Utilities (safe no-ops before DOM ready) ---
   const __stub={textContent:'',className:'',innerHTML:'',style:{},appendChild(){},remove(){},addEventListener(){},setAttribute(){},getAttribute(){return null;}};
   const $=id=>document.getElementById(id)||__stub;
   const safeText=(el,t)=>{if(el&&'textContent'in el)el.textContent=t};
@@ -255,25 +249,87 @@
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
   const nextFrame=()=>new Promise(r=>requestAnimationFrame(r));
 
-  const els={
-    lonStart:$('lonStart'),lonEnd:$('lonEnd'),latStart:$('latStart'),latEnd:$('latEnd'),
-    zone:$('zone'),south:$('south'),
-    sample:$('sample'),dxdy:$('dxdy'),edge:$('edgeSteps'),
-    btnDownload:$('btnDownload'),btnRunAll:$('btnRunAll'),status:$('status'),
-    schematic:$('schematic'),
-    optParams:$('optParams'), fdpParams:$('fdpParams'),
-    logAll:$('logAll'), logs:$('logs'),
-    fdpName:$('fdpName'),fdpAppKey:$('fdpAppKey'),fdpPartition:$('fdpPartition'),fdpAuth:$('fdpAuth'),fdpStudyId:$('fdpStudyId'),
-    overlay:$('overlay'),ovBar:$('ovBar'),ovTitle:$('ovTitle'),ovStep:$('ovStep'),btnCancel:$('btnCancel')
-  };
+  // === Embedded CSV (Offshore Fields/Blocks) ===
+  const OFFSHORE_CSV = `Name,Basin,Lat_Start,Lat_End,Lon_Start,Lon_End,UTM_Zone,South_Hemisphere
+Búzios,Santos,-24.777,-24.537,-42.618,-42.378,23,True
+Tupi (Lula),Santos,-25.518,-25.278,-42.959,-42.719,23,True
+Mero (Libra),Santos,-24.732,-24.492,-42.34,-42.1,23,True
+Sépia,Santos,-25.328,-25.088,-42.665,-42.425,23,True
+Atapu,Santos,-25.072,-24.832,-42.589,-42.349,23,True
+Berbigão,Santos,-25.123,-24.883,-42.82,-42.58,23,True
+Sururu,Santos,-25.099,-24.859,-42.713,-42.473,23,True
+Lapa,Santos,-25.681,-25.441,-43.603,-43.363,23,True
+Sapinhoá,Santos,-25.888,-25.648,-43.313,-43.073,23,True
+Mexilhão,Santos,-24.596,-24.356,-44.3,-44.06,23,True
+Itapu,Santos,-24.886,-24.646,-42.828,-42.588,23,True
+Júpiter,Santos,-24.92,-24.68,-43.52,-43.28,23,True
+Bacalhau (BM-S-8/Carcará),Santos,-24.92,-24.68,-43.62,-43.38,23,True
+Atlanta,Santos,-24.233,-23.993,-42.013,-41.773,24,True
+Aram (Block),Santos,-24.1,-23.9,-42.3,-42.1,23,True
+Saturno (Block),Santos,-23.9,-23.7,-42.6,-42.4,23,True
+Titã (Block),Santos,-23.8,-23.6,-42.9,-42.7,23,True
+Peroba (Block),Santos,-23.5,-23.3,-41.9,-41.7,24,True
+Pau-Brasil (Block),Santos,-23.3,-23.1,-41.8,-41.6,24,True
+Libra Central (Block),Santos,-23.8,-23.6,-42.3,-42.1,23,True
+Alto de Cabo Frio (Block),Santos,-22.9,-22.7,-41.7,-41.5,24,True
+Roncador,Campos,-22.06,-21.82,-39.866,-39.626,24,True
+Marlim,Campos,-22.544,-22.304,-40.191,-39.951,24,True
+Marlim Sul,Campos,-22.748,-22.508,-40.125,-39.885,24,True
+Albacora,Campos,-22.251,-22.011,-40.081,-39.841,24,True
+Albacora Leste,Campos,-22.231,-21.991,-39.866,-39.626,24,True
+Peregrino,Campos,-23.425,-23.225,-41.352,-41.152,24,True
+Papa-Terra,Campos,-23.621,-23.421,-41.169,-40.969,24,True
+Polvo,Campos,-23.2,-23.0,-41.08,-40.88,24,True
+Tartaruga Verde,Campos,-23.059,-22.859,-40.788,-40.588,24,True
+Frade,Campos,-22.02,-21.78,-40.02,-39.78,24,True
+Wahoo,Campos,-21.72,-21.48,-39.62,-39.38,24,True
+BM-C-33 (Raia/Pão de Açúcar area),Campos,-22.4,-22.2,-41.8,-41.6,24,True
+Peroá,Espírito Santo,-20.7,-20.5,-39.8,-39.6,24,True
+Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
+
+  function parseOffshoreCSV(csv){
+    const lines = csv.trim().split(/\r?\n/);
+    const header = lines.shift().split(',').map(s=>s.trim());
+    const idx = Object.fromEntries(header.map((h,i)=>[h,i]));
+    return lines.map(l=>{
+      const parts = l.split(','); // no quoted commas in data
+      return {
+        Name: parts[idx.Name],
+        Basin: parts[idx.Basin],
+        Lat_Start: +parts[idx.Lat_Start],
+        Lat_End: +parts[idx.Lat_End],
+        Lon_Start: +parts[idx.Lon_Start],
+        Lon_End: +parts[idx.Lon_End],
+        UTM_Zone: +parts[idx.UTM_Zone],
+        South_Hemisphere: /true/i.test(parts[idx.South_Hemisphere])
+      };
+    });
+  }
+
+  // Elements (rebound after DOMContentLoaded)
+  const els = {};
+  function bindEls(){
+    Object.assign(els, {
+      lonStart: $('lonStart'), lonEnd: $('lonEnd'), latStart: $('latStart'), latEnd: $('latEnd'),
+      zone: $('zone'), south: $('south'),
+      sample: $('sample'), dxdy: $('dxdy'), edge: $('edgeSteps'),
+      btnDownload: $('btnDownload'), btnRunAll: $('btnRunAll'), status: $('status'),
+      schematic: $('schematic'),
+      optParams: $('optParams'), fdpParams: $('fdpParams'),
+      logAll: $('logAll'), logs: $('logs'),
+      fdpName: $('fdpName'), fdpAppKey: $('fdpAppKey'), fdpPartition: $('fdpPartition'), fdpAuth: $('fdpAuth'), fdpStudyId: $('fdpStudyId'),
+      overlay: $('overlay'), ovBar: $('ovBar'), ovTitle: $('ovTitle'), ovStep: $('ovStep'), btnCancel: $('btnCancel'),
+      offshore: $('offshore')
+    });
+  }
 
   let controller=null,lastResult=null;
+  let offshoreData=[];
 
   function showOverlay(title,step,pct){els.overlay.style.display='flex';setOverlay(title,step,pct);addEventListener('beforeunload',warnUnload)}
   function hideOverlay(){els.overlay.style.display='none';removeEventListener('beforeunload',warnUnload)}
   function setOverlay(title,step,pct){if(title)safeText(els.ovTitle,title);if(step)safeText(els.ovStep,step);if(pct!=null)safeWidth(els.ovBar,Math.max(0,Math.min(100,pct))+'%')}
   function warnUnload(e){e.preventDefault();e.returnValue='Processing… please wait.'}
-  els.btnCancel.addEventListener?.('click',()=>{controller?.abort();hideOverlay()});
 
   function setStatus(msg,kind){safeText(els.status,msg);safeClass(els.status,'status '+(kind||''));}
   function log(title, obj){
@@ -295,11 +351,8 @@
       const qp=new URLSearchParams(location.search);
       const studyId=qp.get('studyId');
       if(studyId){ els.fdpStudyId.value=studyId; log('Prefilled StudyId from URL', studyId); }
-      // leave empty when not present
     }catch{}
   }
-  window.addEventListener('popstate', applyQueryParams);
-  window.addEventListener('pageshow', applyQueryParams);
 
   function renderSchematic(){
     const lonS=+els.lonStart.value,lonE=+els.lonEnd.value,latS=+els.latStart.value,latE=+els.latEnd.value;
@@ -326,6 +379,7 @@
     </svg>`;
     safeHTML(els.schematic,svg);
   }
+
   function openGoogleMapsPins(){
     const lonStart=+els.lonStart.value,lonEnd=+els.lonEnd.value,latStart=+els.latStart.value,latEnd=+els.latEnd.value;
     const west=Math.min(lonStart,lonEnd),east=Math.max(lonStart,lonEnd),south=Math.min(latStart,latEnd),north=Math.max(latStart,latEnd);
@@ -334,8 +388,6 @@
     const url2=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}`;
     const w=open(url4,'_blank','noopener'); if(!w||w.closed||typeof w.closed==='undefined') open(url2,'_blank','noopener');
   }
-  $('schematic').addEventListener?.('click',openGoogleMapsPins);
-  let _t; ['input','change'].forEach(ev=>[els.lonStart,els.lonEnd,els.latStart,els.latEnd].forEach(i=>i.addEventListener?.(ev,()=>{clearTimeout(_t);_t=setTimeout(renderSchematic,60)}, {passive:true})));
 
   function buildRing({lonStart,lonEnd,latStart,latEnd}){return [[lonStart,latStart],[lonStart,latEnd],[lonEnd,latEnd],[lonEnd,latStart],[lonStart,latStart]]}
   function buildUrl(sample,ring){const poly={type:'Polygon',coordinates:[ring]};const jsonsrc=encodeURIComponent(JSON.stringify(poly));return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;}
@@ -418,17 +470,6 @@
     log('Processed preview (first 30 rows)', res.preview);
     lastResult=res; setStatus('Ready','ok'); return res;
   }
-
-  $('btnDownload')?.addEventListener('click', async()=>{
-    try{
-      showOverlay('Preparing file…','Checking',8);
-      if(!lastResult) await computeBathymetry();
-      setOverlay('Preparing download…','Creating file',96); await nextFrame();
-      const blob=new Blob([lastResult.finalText],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');
-      a.href=URL.createObjectURL(blob); a.download='updated_bathymetry_data_LATLONG.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-      setOverlay('Done','Download started',100); setTimeout(hideOverlay,400);
-    }catch(e){ setStatus(e?.message||String(e),'err'); hideOverlay(); }
-  });
 
   const mask=s=>!s?'':(s.trim().length<=10?s.slice(0,3)+'***':s.slice(0,6)+'…'+s.slice(-4));
   function normalizeToken(input){ if(!input) return ''; let t=String(input).trim(); if(/^bearer\s+/i.test(t)) t=t.replace(/^bearer\s+/i,'').trim(); return t; }
@@ -538,40 +579,72 @@
     return data;
   }
 
-  $('btnRunAll')?.addEventListener('click', async()=>{
-    try{
-      const creds=readCreds({strict:true});
+  // === Offshore dropdown ===
+  const DEFAULT_OFFSHORE_NAME = 'Aram (Block)';
 
-      showOverlay('GEBCO','Build grid…',2);
-      if(!lastResult) await computeBathymetry();
+  function populateOffshoreDropdown(defaultName=DEFAULT_OFFSHORE_NAME){
+    offshoreData = parseOffshoreCSV(OFFSHORE_CSV);
+    offshoreData.sort((a,b)=>a.Name.localeCompare(b.Name, undefined, {sensitivity:'base'}));
+    const opts = ['<option value="">— Select field/block —</option>']
+      .concat(offshoreData.map((r,i)=>`<option value="${i}">${r.Name}</option>`));
+    els.offshore.innerHTML = opts.join('');
+    let idx = offshoreData.findIndex(r => r.Name === defaultName);
+    if (idx < 0) idx = 0; // fallback to first item
+    els.offshore.value = String(idx); // select by value (index)
+    applyOffshoreSelection(idx);
+  }
 
-      setOverlay('FDPlan','Create job…',35);
-      const jobId=await fdpPostJob(creds); log('jobId', jobId);
+  function applyOffshoreSelection(idx){
+    const r = offshoreData[idx];
+    if(!r) return;
+    els.lonStart.value = r.Lon_Start;
+    els.lonEnd.value   = r.Lon_End;
+    els.latStart.value = r.Lat_Start;
+    els.latEnd.value   = r.Lat_End;
+    els.zone.value     = r.UTM_Zone;
+    els.south.checked  = !!r.South_Hemisphere;
+    log('Offshore selection applied', {name:r.Name, basin:r.Basin, bounds:{lon:[r.Lon_Start,r.Lon_End], lat:[r.Lat_Start,r.Lat_End]}, zone:r.UTM_Zone, south:r.South_Hemisphere});
+    renderSchematic();
+  }
 
-      setOverlay('FDPlan','Get container…',55);
-      const containerID=await fdpFetchContainer({jobId,...creds}); log('containerID', containerID);
-
-      setOverlay('FDPlan','Upload file…',75);
-      await fdpUploadWithRetry({containerID,jobId,...creds});
-
-      setOverlay('FDPlan','Set state…',90);
-      await fdpSetState({jobId,...creds});
-
-      setOverlay('Done','Completed',100);
-      setStatus('FDPlan upload completed.','ok');
-    }catch(e){
-      setStatus(e?.message||String(e),'err');
-    }finally{
-      setTimeout(hideOverlay,900);
-    }
-  });
+  // --- SAFE INIT: bind elements AFTER DOM is ready and attach listeners ---
+  let __inited=false, __listenersBound=false;
+  function attachListeners(){
+    if(__listenersBound) return; __listenersBound=true;
+    els.schematic?.addEventListener('click', openGoogleMapsPins);
+    let _t; ['input','change'].forEach(ev=>[els.lonStart,els.lonEnd,els.latStart,els.latEnd].forEach(i=>i?.addEventListener(ev,()=>{clearTimeout(_t);_t=setTimeout(renderSchematic,60)},{passive:true})));
+    els.offshore?.addEventListener('change', (e)=>{
+      const v = e.target.value;
+      if(v==='') return;
+      applyOffshoreSelection(+v);
+    });
+    els.btnDownload?.addEventListener('click', async()=>{
+      try{
+        showOverlay('Preparing file…','Checking',8);
+        if(!lastResult) await computeBathymetry();
+        setOverlay('Preparing download…','Creating file',96); await nextFrame();
+        const blob=new Blob([lastResult.finalText],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob); a.download='updated_bathymetry_data_LATLONG.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+        setOverlay('Done','Download started',100); setTimeout(hideOverlay,400);
+      }catch(e){ setStatus(e?.message||String(e),'err'); hideOverlay(); }
+    });
+    els.btnCancel?.addEventListener('click',()=>{controller?.abort();hideOverlay()});
+  }
 
   function init(){
+    if(__inited) return; __inited=true;
+    bindEls();            // <-- real DOM nodes now
     setDefaults();
-    applyQueryParams(); // << prefill StudyId from ?studyId=
-    safeText($('status'),'Idle');
+    populateOffshoreDropdown(); // <-- preselects "Aram (Block)"
+    applyQueryParams();
+    safeText(els.status,'Idle');
+    attachListeners();
   }
-  init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init, { once: true });
+  } else {
+    init();
+  }
 </script>
 </body>
 </html>

@@ -1,0 +1,36 @@
+Name,Basin,Lat_Start,Lat_End,Lon_Start,Lon_End,UTM_Zone,South_Hemisphere
+Búzios,Santos,-24.777,-24.537,-42.618,-42.378,23,True
+Tupi (Lula),Santos,-25.518,-25.278,-42.959,-42.719,23,True
+Mero (Libra),Santos,-24.732,-24.492,-42.34,-42.1,23,True
+Sépia,Santos,-25.328,-25.088,-42.665,-42.425,23,True
+Atapu,Santos,-25.072,-24.832,-42.589,-42.349,23,True
+Berbigão,Santos,-25.123,-24.883,-42.82,-42.58,23,True
+Sururu,Santos,-25.099,-24.859,-42.713,-42.473,23,True
+Lapa,Santos,-25.681,-25.441,-43.603,-43.363,23,True
+Sapinhoá,Santos,-25.888,-25.648,-43.313,-43.073,23,True
+Mexilhão,Santos,-24.596,-24.356,-44.3,-44.06,23,True
+Itapu,Santos,-24.886,-24.646,-42.828,-42.588,23,True
+Júpiter,Santos,-24.92,-24.68,-43.52,-43.28,23,True
+Bacalhau (BM-S-8/Carcará),Santos,-24.92,-24.68,-43.62,-43.38,23,True
+Atlanta,Santos,-24.233,-23.993,-42.013,-41.773,24,True
+Aram (Block),Santos,-24.1,-23.9,-42.3,-42.1,23,True
+Saturno (Block),Santos,-23.9,-23.7,-42.6,-42.4,23,True
+Titã (Block),Santos,-23.8,-23.6,-42.9,-42.7,23,True
+Peroba (Block),Santos,-23.5,-23.3,-41.9,-41.7,24,True
+Pau-Brasil (Block),Santos,-23.3,-23.1,-41.8,-41.6,24,True
+Libra Central (Block),Santos,-23.8,-23.6,-42.3,-42.1,23,True
+Alto de Cabo Frio (Block),Santos,-22.9,-22.7,-41.7,-41.5,24,True
+Roncador,Campos,-22.06,-21.82,-39.866,-39.626,24,True
+Marlim,Campos,-22.544,-22.304,-40.191,-39.951,24,True
+Marlim Sul,Campos,-22.748,-22.508,-40.125,-39.885,24,True
+Albacora,Campos,-22.251,-22.011,-40.081,-39.841,24,True
+Albacora Leste,Campos,-22.231,-21.991,-39.866,-39.626,24,True
+Peregrino,Campos,-23.425,-23.225,-41.352,-41.152,24,True
+Papa-Terra,Campos,-23.621,-23.421,-41.169,-40.969,24,True
+Polvo,Campos,-23.2,-23.0,-41.08,-40.88,24,True
+Tartaruga Verde,Campos,-23.059,-22.859,-40.788,-40.588,24,True
+Frade,Campos,-22.02,-21.78,-40.02,-39.78,24,True
+Wahoo,Campos,-21.72,-21.48,-39.62,-39.38,24,True
+BM-C-33 (Raia/Pão de Açúcar area),Campos,-22.4,-22.2,-41.8,-41.6,24,True
+Peroá,Espírito Santo,-20.7,-20.5,-39.8,-39.6,24,True
+Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True
