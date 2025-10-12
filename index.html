@@ -589,8 +589,8 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
       .concat(offshoreData.map((r,i)=>`<option value="${i}">${r.Name}</option>`));
     els.offshore.innerHTML = opts.join('');
     let idx = offshoreData.findIndex(r => r.Name === defaultName);
-    if (idx < 0) idx = 0; // fallback to first item
-    els.offshore.value = String(idx); // select by value (index)
+    if (idx < 0) idx = 0;
+    els.offshore.value = String(idx);
     applyOffshoreSelection(idx);
   }
 
@@ -628,14 +628,36 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
         setOverlay('Done','Download started',100); setTimeout(hideOverlay,400);
       }catch(e){ setStatus(e?.message||String(e),'err'); hideOverlay(); }
     });
+    // --- FIX: Run & Upload pipeline ---
+    els.btnRunAll?.addEventListener('click', async()=>{
+      try{
+        setStatus('Starting…'); showOverlay('FDPlan Upload','Reading inputs',5);
+        const creds = readCreds({strict:true});
+        setOverlay(null,'Computing bathymetry',10);
+        if(!lastResult) await computeBathymetry();
+        setOverlay(null,'Creating job',25);
+        const jobId = await fdpPostJob({name:creds.name,appKey:creds.appKey,partition:creds.partition,authKey:creds.authKey,studyId:creds.studyId});
+        setOverlay(null,'Finding container',45);
+        const containerID = await fdpFetchContainer({jobId,appKey:creds.appKey,partition:creds.partition,authKey:creds.authKey});
+        setOverlay(null,'Uploading file',70);
+        await fdpUploadWithRetry({containerID,appKey:creds.appKey,partition:creds.partition,authKey:creds.authKey,jobId});
+        setOverlay(null,'Finalizing job',90);
+        await fdpSetState({jobId,appKey:creds.appKey,partition:creds.partition,authKey:creds.authKey});
+        setOverlay('Done','Upload complete',100);
+        setStatus('Uploaded to FDPlan','ok'); setTimeout(hideOverlay,700);
+      }catch(e){
+        setStatus(e?.message||String(e),'err'); hideOverlay();
+        log('Run & Upload failed', {message: e?.message, stack: e?.stack});
+      }
+    });
     els.btnCancel?.addEventListener('click',()=>{controller?.abort();hideOverlay()});
   }
 
   function init(){
     if(__inited) return; __inited=true;
-    bindEls();            // <-- real DOM nodes now
+    bindEls();
     setDefaults();
-    populateOffshoreDropdown(); // <-- preselects "Aram (Block)"
+    populateOffshoreDropdown(); // preselects "Aram (Block)"
     applyQueryParams();
     safeText(els.status,'Idle');
     attachListeners();
