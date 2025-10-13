@@ -25,12 +25,12 @@
     input[type="number"],input[type="text"],select{width:100%;padding:10px 12px;border:1px solid #d7e3f4;border-radius:10px;font-size:14px;outline:none;transition:border .15s,box-shadow .15s}
     input:focus,select:focus{border-color:var(--slb-600);box-shadow:0 0 0 3px rgba(28,89,145,.15)}
     .switch{display:flex;align-items:center;gap:10px;margin-top:6px}
-    .desc{margin:6px 0 0;font-size:12px;color:var(--muted)}
+    .desc{margin:6px 0 0;font-size:12px;color:#64748b}
     .actions{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
     button{border:none;background:var(--slb);color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(0,51,102,.25);transition:filter .15s,transform .06s}
     .secondary{background:#fff;color:#0e2a4f;border:1px solid #cfe1f7;box-shadow:none}
     button:hover{filter:brightness(1.05)}button:active{transform:translateY(1px)}
-    .status{min-height:20px;font-size:13px;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:var(--err)}
+    .status{min-height:20px;font-size:13px;color:#64748b}.status.ok{color:var(--ok)}.status.err{color:var(--err)}
     pre{background:#0c1b33;color:#e7eefc;border:1px solid #243a67;border-radius:10px;padding:10px;white-space:pre;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace}
     .schematic-title{display:flex;justify-content:center}.schematic-wrap{border:1px solid var(--bd);border-radius:10px;padding:10px;background:#fbfdff}.schematic{cursor:pointer}.schematic svg{width:100%;height:auto;display:block}
     .right .stack details{border:1px solid var(--bd);border-radius:12px;padding:8px 10px;background:#fff}
@@ -57,7 +57,7 @@
     #fdpParams input[type="text"], #fdpParams input[type="number"]{padding:6px 8px;font-size:12px;border-radius:8px}
     #fdpParams .row3, #fdpParams .row2{gap:8px}
     #fdpParams .desc{font-size:11px;margin-top:4px}
-    footer.tiny{max-width:1100px;margin:8px auto 20px;padding:6px 12px 0;border-top:1px solid var(--bd);font-size:10px;line-height:1.25;color:var(--muted);opacity:.9}
+    footer.tiny{max-width:1100px;margin:8px auto 20px;padding:6px 12px 0;border-top:1px solid var(--bd);font-size:10px;line-height:1.25;color:#64748b;opacity:.9}
     footer.tiny a{color:inherit;text-decoration:underline;word-break:break-all}
   </style>
 </head>
@@ -233,7 +233,6 @@
   </div>
 
 <script>
-  // --- Utilities (safe no-ops before DOM ready) ---
   const __stub={textContent:'',className:'',innerHTML:'',style:{},appendChild(){},remove(){},addEventListener(){},setAttribute(){},getAttribute(){return null;}};
   const $=id=>document.getElementById(id)||__stub;
   const safeText=(el,t)=>{if(el&&'textContent'in el)el.textContent=t};
@@ -249,7 +248,6 @@
   const wait=ms=>new Promise(r=>setTimeout(r,ms));
   const nextFrame=()=>new Promise(r=>requestAnimationFrame(r));
 
-  // === Embedded CSV (Offshore Fields/Blocks) ===
   const OFFSHORE_CSV = `Name,Basin,Lat_Start,Lat_End,Lon_Start,Lon_End,UTM_Zone,South_Hemisphere
 Búzios,Santos,-24.777,-24.537,-42.618,-42.378,23,True
 Tupi (Lula),Santos,-25.518,-25.278,-42.959,-42.719,23,True
@@ -292,7 +290,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     const header = lines.shift().split(',').map(s=>s.trim());
     const idx = Object.fromEntries(header.map((h,i)=>[h,i]));
     return lines.map(l=>{
-      const parts = l.split(','); // no quoted commas in data
+      const parts = l.split(',');
       return {
         Name: parts[idx.Name],
         Basin: parts[idx.Basin],
@@ -306,7 +304,6 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     });
   }
 
-  // Elements (rebound after DOMContentLoaded)
   const els = {};
   function bindEls(){
     Object.assign(els, {
@@ -583,10 +580,8 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   const DEFAULT_OFFSHORE_NAME = 'Aram (Block)';
 
   function populateOffshoreDropdown(defaultName=DEFAULT_OFFSHORE_NAME){
-    offshoreData = parseOffshoreCSV(OFFSHORE_CSV); // keep original order as canonical index space
-    // Discover basins and sort them alphabetically
+    offshoreData = parseOffshoreCSV(OFFSHORE_CSV);
     const basins = Array.from(new Set(offshoreData.map(r=>r.Basin))).sort((a,b)=>a.localeCompare(b, undefined, {sensitivity:'base'}));
-    // Build grouped options (each option value = original array index)
     const groupsHtml = basins.map(basin => {
       const items = offshoreData.map((r,i)=>({i,Name:r.Name,Basin:r.Basin}))
         .filter(o=>o.Basin===basin)
@@ -595,10 +590,8 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
       return `<optgroup label="${basin}">${opts}</optgroup>`;
     }).join('');
     els.offshore.innerHTML = `<option value="">— Select field/block —</option>${groupsHtml}`;
-    // Select default
     let idx = offshoreData.findIndex(r => r.Name === defaultName);
     if (idx < 0) {
-      // fallback to the very first actual <option> if any
       const first = els.offshore.querySelector('optgroup > option');
       idx = first ? +first.value : -1;
     }
@@ -621,28 +614,56 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     renderSchematic();
   }
 
-  // --- SAFE INIT: bind elements AFTER DOM is ready and attach listeners ---
+  // Filenames: "<Name>_<YYYYMMDD_HHmmssZ>.txt"
+  function sanitizeFileComponent(s){
+    let base = (s||'Custom Area').toString().trim();
+    base = base.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    base = base.replace(/[\s\/\\]+/g, '_');
+    base = base.replace(/[^A-Za-z0-9._-]/g, '');
+    base = base.replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+    if (!base) base = 'Custom_Area';
+    return base;
+  }
+  function currentOffshoreName(){
+    const idx = +els.offshore.value;
+    if (!Number.isNaN(idx) && offshoreData[idx]) return offshoreData[idx].Name;
+    const opt = els.offshore.options[els.offshore.selectedIndex];
+    return opt ? opt.text : 'Custom Area';
+  }
+  function utcStamp(){
+    const d = new Date();
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth()+1).padStart(2,'0');
+    const day = String(d.getUTCDate()).padStart(2,'0');
+    const hh = String(d.getUTCHours()).padStart(2,'0');
+    const mm = String(d.getUTCMinutes()).padStart(2,'0');
+    const ss = String(d.getUTCSeconds()).padStart(2,'0');
+    return `${y}${m}${day}_${hh}${mm}${ss}Z`;
+  }
+
   let __inited=false, __listenersBound=false;
   function attachListeners(){
     if(__listenersBound) return; __listenersBound=true;
-    els.schematic?.addEventListener('click', openGoogleMapsPins);
+    $('schematic')?.addEventListener('click', openGoogleMapsPins);
     let _t; ['input','change'].forEach(ev=>[els.lonStart,els.lonEnd,els.latStart,els.latEnd].forEach(i=>i?.addEventListener(ev,()=>{clearTimeout(_t);_t=setTimeout(renderSchematic,60)},{passive:true})));
     els.offshore?.addEventListener('change', (e)=>{
-      const v = e.target.value;
-      if(v==='') return;
-      applyOffshoreSelection(+v);
+      const v = e.target.value; if(v==='') return; applyOffshoreSelection(+v);
     });
+    // Download: exactly "<Field>.txt" + UTC timestamp suffix
     els.btnDownload?.addEventListener('click', async()=>{
       try{
         showOverlay('Preparing file…','Checking',8);
         if(!lastResult) await computeBathymetry();
-        setOverlay('Preparing download…','Creating file',96); await nextFrame();
-        const blob=new Blob([lastResult.finalText],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');
-        a.href=URL.createObjectURL(blob); a.download='updated_bathymetry_data_LATLONG.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-        setOverlay('Done','Download started',100); setTimeout(hideOverlay,400);
+        const name = sanitizeFileComponent(currentOffshoreName());
+        const filename = `${name}_${utcStamp()}.txt`;
+        setOverlay('Preparing download…',`Creating ${filename}`,96); await nextFrame();
+        const blob=new Blob([lastResult.finalText],{type:'text/plain;charset=utf-8'});
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+        setOverlay('Done',`Download: ${filename}`,100); setTimeout(hideOverlay,400);
       }catch(e){ setStatus(e?.message||String(e),'err'); hideOverlay(); }
     });
-    // FDPlan pipeline
+    // FDPlan pipeline (unchanged)
     els.btnRunAll?.addEventListener('click', async()=>{
       try{
         setStatus('Starting…'); showOverlay('FDPlan Upload','Reading inputs',5);
@@ -664,14 +685,14 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
         log('Run & Upload failed', {message: e?.message, stack: e?.stack});
       }
     });
-    els.btnCancel?.addEventListener('click',()=>{controller?.abort();hideOverlay()});
+    $('btnCancel')?.addEventListener('click',()=>{controller?.abort();hideOverlay()});
   }
 
   function init(){
     if(__inited) return; __inited=true;
     bindEls();
     setDefaults();
-    populateOffshoreDropdown(); // preselects "Aram (Block)"
+    populateOffshoreDropdown();
     applyQueryParams();
     safeText(els.status,'Idle');
     attachListeners();
