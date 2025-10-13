@@ -28,7 +28,7 @@
     .desc{margin:6px 0 0;font-size:12px;color:var(--muted)}
     .actions{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
     button{border:none;background:var(--slb);color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(0,51,102,.25);transition:filter .15s,transform .06s}
-    .secondary{background:#fff;color:var(--slb);border:1px solid #cfe1f7;box-shadow:none}
+    .secondary{background:#fff;color:#0e2a4f;border:1px solid #cfe1f7;box-shadow:none}
     button:hover{filter:brightness(1.05)}button:active{transform:translateY(1px)}
     .status{min-height:20px;font-size:13px;color:var(--muted)}.status.ok{color:var(--ok)}.status.err{color:var(--err)}
     pre{background:#0c1b33;color:#e7eefc;border:1px solid #243a67;border-radius:10px;padding:10px;white-space:pre;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace}
@@ -50,7 +50,7 @@
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:saturate(120%) blur(2px);display:none;align-items:center;justify-content:center;z-index:9999}
     .panel{background:#fff;border:1px solid var(--bd);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);width:min(460px,92vw);padding:16px}
     .progress{height:8px;background:#eef3fb;border-radius:999px;overflow:hidden;border:1px solid #d9e6f6}.bar{height:100%;width:0%;background:linear-gradient(90deg,var(--slb),var(--slb-600))}
-    .row{display:flex;align-items:center;justify-content:space-between;margin:10px 0 0}.ghost{background:#fff;color:var(--slb);border:1px solid #cfe1f7;box-shadow:none}
+    .row{display:flex;align-items:center;justify-content:space-between;margin:10px 0 0}.ghost{background:#fff;color:#0e2a4f;border:1px solid #cfe1f7;box-shadow:none}
     .warn{outline:2px solid #ffcc00;animation:blink .9s 2}@keyframes blink{50%{outline-color:transparent}}
     details#fdpParams{padding:6px 8px}details#fdpParams > summary{font-size:13px}
     #fdpParams label{font-size:12px;margin-bottom:4px}
@@ -83,7 +83,7 @@
                 <select id="offshore">
                   <option value="">— Select field/block —</option>
                 </select>
-                <div class="desc">Selecting fills Lon/Lat bounds, UTM zone, and South flag.</div>
+                <div class="desc">Grouped by Basin; selecting fills Lon/Lat, UTM zone, and South flag.</div>
               </div>
             </div>
             <div class="row2">
@@ -579,19 +579,33 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     return data;
   }
 
-  // === Offshore dropdown ===
+  // === Offshore dropdown grouped by Basin ===
   const DEFAULT_OFFSHORE_NAME = 'Aram (Block)';
 
   function populateOffshoreDropdown(defaultName=DEFAULT_OFFSHORE_NAME){
-    offshoreData = parseOffshoreCSV(OFFSHORE_CSV);
-    offshoreData.sort((a,b)=>a.Name.localeCompare(b.Name, undefined, {sensitivity:'base'}));
-    const opts = ['<option value="">— Select field/block —</option>']
-      .concat(offshoreData.map((r,i)=>`<option value="${i}">${r.Name}</option>`));
-    els.offshore.innerHTML = opts.join('');
+    offshoreData = parseOffshoreCSV(OFFSHORE_CSV); // keep original order as canonical index space
+    // Discover basins and sort them alphabetically
+    const basins = Array.from(new Set(offshoreData.map(r=>r.Basin))).sort((a,b)=>a.localeCompare(b, undefined, {sensitivity:'base'}));
+    // Build grouped options (each option value = original array index)
+    const groupsHtml = basins.map(basin => {
+      const items = offshoreData.map((r,i)=>({i,Name:r.Name,Basin:r.Basin}))
+        .filter(o=>o.Basin===basin)
+        .sort((a,b)=>a.Name.localeCompare(b.Name, undefined, {sensitivity:'base'}));
+      const opts = items.map(o=>`<option value="${o.i}">${o.Name}</option>`).join('');
+      return `<optgroup label="${basin}">${opts}</optgroup>`;
+    }).join('');
+    els.offshore.innerHTML = `<option value="">— Select field/block —</option>${groupsHtml}`;
+    // Select default
     let idx = offshoreData.findIndex(r => r.Name === defaultName);
-    if (idx < 0) idx = 0;
-    els.offshore.value = String(idx);
-    applyOffshoreSelection(idx);
+    if (idx < 0) {
+      // fallback to the very first actual <option> if any
+      const first = els.offshore.querySelector('optgroup > option');
+      idx = first ? +first.value : -1;
+    }
+    if (idx >= 0) {
+      els.offshore.value = String(idx);
+      applyOffshoreSelection(idx);
+    }
   }
 
   function applyOffshoreSelection(idx){
@@ -628,7 +642,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
         setOverlay('Done','Download started',100); setTimeout(hideOverlay,400);
       }catch(e){ setStatus(e?.message||String(e),'err'); hideOverlay(); }
     });
-    // --- FIX: Run & Upload pipeline ---
+    // FDPlan pipeline
     els.btnRunAll?.addEventListener('click', async()=>{
       try{
         setStatus('Starting…'); showOverlay('FDPlan Upload','Reading inputs',5);
