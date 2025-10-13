@@ -1,3 +1,4 @@
+<!-- /mnt/data/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -321,6 +322,28 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   }
 
   let controller=null,lastResult=null;
+
+  // --- NEW: signature-based recompute control ---
+  let lastSig=null;
+  function currentSignature(){
+    const f4=v=>Math.round((+v)*1e4)/1e4;
+    try{
+      return JSON.stringify({
+        lonStart:f4(els.lonStart.value),
+        lonEnd:f4(els.lonEnd.value),
+        latStart:f4(els.latStart.value),
+        latEnd:f4(els.latEnd.value),
+        zone:(+els.zone.value)||0,
+        South:!!els.south.checked,
+        sample:String(els.sample.value||'1'),
+        dxdy:(+els.dxdy.value)||200,
+        edge:(+els.edge.value)||3
+      });
+    }catch{ return null; }
+  }
+  const needsRecompute=()=>!lastResult || currentSignature()!==lastSig;
+  // ------------------------------------------------
+
   let offshoreData=[];
 
   function showOverlay(title,step,pct){els.overlay.style.display='flex';setOverlay(title,step,pct);addEventListener('beforeunload',warnUnload)}
@@ -465,7 +488,8 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     log('GEBCO response', apiData);
     const res=await processDataAsync({apiData,zone,South,dxdy:Math.max(1,+els.dxdy.value||200),edgeSteps:Math.max(0,Math.floor(+els.edge.value||3))},(s,p)=>setOverlay('Processing',s,p));
     log('Processed preview (first 30 rows)', res.preview);
-    lastResult=res; setStatus('Ready','ok'); return res;
+    lastResult=res; lastSig=currentSignature(); // <-- NEW: record signature after computing
+    setStatus('Ready','ok'); return res;
   }
 
   const mask=s=>!s?'':(s.trim().length<=10?s.slice(0,3)+'***':s.slice(0,6)+'…'+s.slice(-4));
@@ -645,15 +669,20 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   function attachListeners(){
     if(__listenersBound) return; __listenersBound=true;
     $('schematic')?.addEventListener('click', openGoogleMapsPins);
+
+    // Keep schematic fresh on changes
     let _t; ['input','change'].forEach(ev=>[els.lonStart,els.lonEnd,els.latStart,els.latEnd].forEach(i=>i?.addEventListener(ev,()=>{clearTimeout(_t);_t=setTimeout(renderSchematic,60)},{passive:true})));
+
+    // Offshore => fill inputs
     els.offshore?.addEventListener('change', (e)=>{
       const v = e.target.value; if(v==='') return; applyOffshoreSelection(+v);
     });
-    // Download: exactly "<Field>.txt" + UTC timestamp suffix
+
+    // Download: recompute if params changed since last compute
     els.btnDownload?.addEventListener('click', async()=>{
       try{
         showOverlay('Preparing file…','Checking',8);
-        if(!lastResult) await computeBathymetry();
+        if(needsRecompute()){ await computeBathymetry(); } // <-- CHANGED
         const name = sanitizeFileComponent(currentOffshoreName());
         const filename = `${name}_${utcStamp()}.txt`;
         setOverlay('Preparing download…',`Creating ${filename}`,96); await nextFrame();
@@ -663,13 +692,14 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
         setOverlay('Done',`Download: ${filename}`,100); setTimeout(hideOverlay,400);
       }catch(e){ setStatus(e?.message||String(e),'err'); hideOverlay(); }
     });
-    // FDPlan pipeline (unchanged)
+
+    // FDPlan pipeline: same recompute rule
     els.btnRunAll?.addEventListener('click', async()=>{
       try{
         setStatus('Starting…'); showOverlay('FDPlan Upload','Reading inputs',5);
         const creds = readCreds({strict:true});
         setOverlay(null,'Computing bathymetry',10);
-        if(!lastResult) await computeBathymetry();
+        if(needsRecompute()){ await computeBathymetry(); } // <-- CHANGED
         setOverlay(null,'Creating job',25);
         const jobId = await fdpPostJob({name:creds.name,appKey:creds.appKey,partition:creds.partition,authKey:creds.authKey,studyId:creds.studyId});
         setOverlay(null,'Finding container',45);
@@ -685,6 +715,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
         log('Run & Upload failed', {message: e?.message, stack: e?.stack});
       }
     });
+
     $('btnCancel')?.addEventListener('click',()=>{controller?.abort();hideOverlay()});
   }
 
