@@ -1,4 +1,4 @@
-<!-- BATHY EXTRACTOR -->
+<!-- /mnt/data/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,13 +25,13 @@
     label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#0e2a4f}
     input[type="number"],input[type="text"],select{width:100%;padding:10px 12px;border:1px solid #d7e3f4;border-radius:10px;font-size:14px;outline:none;transition:border .15s,box-shadow .15s}
     input:focus,select:focus{border-color:var(--slb-600);box-shadow:0 0 0 3px rgba(28,89,145,.15)}
-    .switch{display:flex;align-items:center;gap:10px;margin-top:6px}
+    .switch{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
     .desc{margin:6px 0 0;font-size:12px;color:#64748b}
     .actions{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
     button{border:none;background:var(--slb);color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(0,51,102,.25);transition:filter .15s,transform .06s}
     .secondary{background:#fff;color:#0e2a4f;border:1px solid #cfe1f7;box-shadow:none}
     button:hover{filter:brightness(1.05)}button:active{transform:translateY(1px)}
-    .status{min-height:20px;font-size:13px;color:#64748b}.status.ok{color:var(--ok)}.status.err{color:var(--err)}
+    .status{min-height:20px;font-size:13px;color:#64748b}.status.ok{color:var(--ok)}.status.err{color:#c62828}
     pre{background:#0c1b33;color:#e7eefc;border:1px solid #243a67;border-radius:10px;padding:10px;white-space:pre;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace}
     .schematic-title{display:flex;justify-content:center}.schematic-wrap{border:1px solid var(--bd);border-radius:10px;padding:10px;background:#fbfdff}.schematic{cursor:pointer}.schematic svg{width:100%;height:auto;display:block}
     .right .stack details{border:1px solid var(--bd);border-radius:12px;padding:8px 10px;background:#fff}
@@ -60,6 +60,7 @@
     #fdpParams .desc{font-size:11px;margin-top:4px}
     footer.tiny{max-width:1100px;margin:8px auto 20px;padding:6px 12px 0;border-top:1px solid var(--bd);font-size:10px;line-height:1.25;color:#64748b;opacity:.9}
     footer.tiny a{color:inherit;text-decoration:underline;word-break:break-all}
+    .divider{height:1px;background:#e6eef7;margin:8px 0}
   </style>
 </head>
 <body>
@@ -81,34 +82,71 @@
             <div class="row2" style="margin-bottom:6px">
               <div>
                 <label for="offshore">Offshore Field/Block</label>
-                <select id="offshore">
-                  <option value="">— Select field/block —</option>
-                </select>
+                <select id="offshore"><option value="">— Select field/block —</option></select>
                 <div class="desc">Grouped by Basin; selecting fills Lon/Lat, UTM zone, and South flag.</div>
               </div>
-            </div>
-            <div class="row2">
               <div>
-                <label for="lonStart">Longitude start</label>
-                <input id="lonStart" type="number" step="0.0001" />
-                <div class="desc">Western boundary (deg). Example: −44.87.</div>
-              </div>
-              <div>
-                <label for="lonEnd">Longitude end</label>
-                <input id="lonEnd" type="number" step="0.0001" />
-                <div class="desc">Eastern boundary (deg). Must be ≥ start.</div>
+                <label>Input mode</label>
+                <div class="switch" role="radiogroup" aria-label="Coordinate input mode">
+                  <label><input id="modeDegrees" type="radio" name="coordMode" value="deg" checked /> Degrees (Lon/Lat)</label>
+                  <label><input id="modeMeters" type="radio" name="coordMode" value="m" /> Meters (UTM X/Y)</label>
+                </div>
+                <div class="desc">Switch to “Meters” to type UTM Easting/Northing (requires Zone &amp; South).</div>
               </div>
             </div>
-            <div class="row2" style="margin-top:8px">
-              <div>
-                <label for="latStart">Latitude start</label>
-                <input id="latStart" type="number" step="0.0001" />
-                <div class="desc">Southern boundary (deg). Example: −25.85.</div>
+
+            <div id="degInputs">
+              <div class="row2">
+                <div>
+                  <label for="lonStart">Longitude start</label>
+                  <input id="lonStart" type="number" step="0.0001" />
+                  <div class="desc">Western boundary (deg). Example: −44.87.</div>
+                </div>
+                <div>
+                  <label for="lonEnd">Longitude end</label>
+                  <input id="lonEnd" type="number" step="0.0001" />
+                  <div class="desc">Eastern boundary (deg). Must be ≥ start.</div>
+                </div>
               </div>
-              <div>
-                <label for="latEnd">Latitude end</label>
-                <input id="latEnd" type="number" step="0.0001" />
-                <div class="desc">Northern boundary (deg). Must be ≥ start.</div>
+              <div class="row2" style="margin-top:8px">
+                <div>
+                  <label for="latStart">Latitude start</label>
+                  <input id="latStart" type="number" step="0.0001" />
+                  <div class="desc">Southern boundary (deg). Example: −25.85.</div>
+                </div>
+                <div>
+                  <label for="latEnd">Latitude end</label>
+                  <input id="latEnd" type="number" step="0.0001" />
+                  <div class="desc">Northern boundary (deg). Must be ≥ start.</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="mInputs" style="display:none">
+              <div class="divider"></div>
+              <div class="row2">
+                <div>
+                  <label for="xStart">Easting start (X start, m)</label>
+                  <input id="xStart" type="number" step="1" />
+                  <div class="desc">Western boundary in meters (UTM Easting).</div>
+                </div>
+                <div>
+                  <label for="xEnd">Easting end (X end, m)</label>
+                  <input id="xEnd" type="number" step="1" />
+                  <div class="desc">Eastern boundary in meters. Must be ≥ start.</div>
+                </div>
+              </div>
+              <div class="row2" style="margin-top:8px">
+                <div>
+                  <label for="yStart">Northing start (Y start, m)</label>
+                  <input id="yStart" type="number" step="1" />
+                  <div class="desc">Southern boundary in meters (UTM Northing).</div>
+                </div>
+                <div>
+                  <label for="yEnd">Northing end (Y end, m)</label>
+                  <input id="yEnd" type="number" step="1" />
+                  <div class="desc">Northern boundary in meters. Must be ≥ start.</div>
+                </div>
               </div>
             </div>
           </div>
@@ -245,11 +283,10 @@
 
   const SOURCE_URL='https://pmachado333.github.io/Bathy_extractor';
   const FTYPE="com.slb.cloud.fdplan.data_sources.transformation_required_test:data-types:gebco-external:Patrick Custom Solution.v1";
-  const defaults={coordinates:{longitude:{start:-44.87,end:-44.48},latitude:{start:-25.85,end:-25.45}},zone:23,South:true,sample:"1",dxdy:200,edgeSteps:3,fdpName:"Bathymetry External"};
-  const wait=ms=>new Promise(r=>setTimeout(r,ms));
-  const nextFrame=()=>new Promise(r=>requestAnimationFrame(r));
+  const defaults={coordinates:{longitude:{start:-42.3,end:-42.1},latitude:{start:-24.1,end:-23.9}},zone:23,South:true,sample:"1",dxdy:200,edgeSteps:3,fdpName:"Bathymetry External"};
+  const wait=ms=>new Promise(r=>setTimeout(r,ms)); const nextFrame=()=>new Promise(r=>requestAnimationFrame(r));
 
-  const OFFSHORE_CSV = `Name,Basin,Lat_Start,Lat_End,Lon_Start,Lon_End,UTM_Zone,South_Hemisphere
+  const OFFSHORE_CSV=`Name,Basin,Lat_Start,Lat_End,Lon_Start,Lon_End,UTM_Zone,South_Hemisphere
 Custom,_User_Choice,-25.85,-25.45,-44.87,-44.48,23,True
 Búzios,Santos,-24.777,-24.537,-42.618,-42.378,23,True
 Tupi (Lula),Santos,-25.518,-25.278,-42.959,-42.719,23,True
@@ -310,6 +347,9 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   function bindEls(){
     Object.assign(els, {
       lonStart: $('lonStart'), lonEnd: $('lonEnd'), latStart: $('latStart'), latEnd: $('latEnd'),
+      xStart: $('xStart'), xEnd: $('xEnd'), yStart: $('yStart'), yEnd: $('yEnd'),
+      modeDeg: $('modeDegrees'), modeM: $('modeMeters'),
+      degInputs: $('degInputs'), mInputs: $('mInputs'),
       zone: $('zone'), south: $('south'),
       sample: $('sample'), dxdy: $('dxdy'), edge: $('edgeSteps'),
       btnDownload: $('btnDownload'), btnRunAll: $('btnRunAll'), status: $('status'),
@@ -322,46 +362,72 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     });
   }
 
-  let controller=null,lastResult=null;
+  let controller=null,lastResult=null,lastSig=null,offshoreData=[];
+  const canonicalLL = { lonStart:null, lonEnd:null, latStart:null, latEnd:null };
 
-  // --- NEW: signature-based recompute control ---
-  let lastSig=null;
+  function getCoordMode(){ return els.modeM?.checked ? 'm' : 'deg'; }
+  const utmProj=(zone,South)=>`+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`;
+  function toUTM(lon,lat,zone,South){ return proj4('WGS84', utmProj(zone,South)).forward([lon,lat]); }
+  function toLL(x,y,zone,South){ return proj4(utmProj(zone,South), 'WGS84').forward([x,y]); }
+
+  // Densified envelopes (why: UTM edges are curved in lon/lat)
+  function envelopeUTMofLLRect(lonS,lonE,latS,latE,zone,South,n=64){
+    const p = proj4('WGS84', utmProj(zone,South));
+    let xmin=+Infinity,xmax=-Infinity,ymin=+Infinity,ymax=-Infinity;
+    for(let i=0;i<=n;i++){
+      const t=i/n, lon=lonS+(lonE-lonS)*t, lat=latS+(latE-latS)*t;
+      const a=p.forward([lon,latS]), b=p.forward([lon,latE]), c=p.forward([lonS,lat]), d=p.forward([lonE,lat]);
+      [a,b,c,d].forEach(([x,y])=>{ if(x<xmin)xmin=x; if(x>xmax)xmax=x; if(y<ymin)ymin=y; if(y>ymax)ymax=y; });
+    }
+    return { xmin, xmax, ymin, ymax };
+  }
+  function envelopeLLofUTMRect(xS,xE,yS,yE,zone,South,n=64){
+    const p = proj4(utmProj(zone,South), 'WGS84');
+    let lonMin=+Infinity,lonMax=-Infinity,latMin=+Infinity,latMax=-Infinity;
+    for(let i=0;i<=n;i++){
+      const t=i/n, x=xS+(xE-xS)*t, y=yS+(yE-yS)*t;
+      const a=p.forward([x,yS]), b=p.forward([x,yE]), c=p.forward([xS,y]), d=p.forward([xE,y]);
+      [a,b,c,d].forEach(([lon,lat])=>{ if(lon<lonMin)lonMin=lon; if(lon>lonMax)lonMax=lon; if(lat<latMin)latMin=lat; if(lat>latMax)latMax=lat; });
+    }
+    return { lonStart:lonMin, lonEnd:lonMax, latStart:latMin, latEnd:latMax };
+  }
+
+  // Build a densified rectangular ring (why: better edge coverage in API)
+  function buildDensifiedRing({lonStart,lonEnd,latStart,latEnd}, n=64){
+    const ring=[];
+    for(let i=0;i<=n;i++){ const t=i/n; ring.push([lonStart+(lonEnd-lonStart)*t, latStart]); }
+    for(let i=1;i<=n;i++){ const t=i/n; ring.push([lonEnd, latStart+(latEnd-latStart)*t]); }
+    for(let i=1;i<=n;i++){ const t=i/n; ring.push([lonEnd-(lonEnd-lonStart)*t, latEnd]); }
+    for(let i=1;i<=n;i++){ const t=i/n; ring.push([lonStart, latEnd-(latEnd-latStart)*t]); }
+    ring.push(ring[0]);
+    return ring;
+  }
+
+  function setMetersAutoFlag(on){ els.mInputs?.setAttribute('data-auto-meters', on?'1':'0'); }
+  const metersAreAuto=()=>els.mInputs?.getAttribute('data-auto-meters')==='1';
+
   function currentSignature(){
     const f4=v=>Math.round((+v)*1e4)/1e4;
     try{
-      return JSON.stringify({
-        lonStart:f4(els.lonStart.value),
-        lonEnd:f4(els.lonEnd.value),
-        latStart:f4(els.latStart.value),
-        latEnd:f4(els.latEnd.value),
-        zone:(+els.zone.value)||0,
-        South:!!els.south.checked,
-        sample:String(els.sample.value||'1'),
-        dxdy:(+els.dxdy.value)||200,
-        edge:(+els.edge.value)||3
-      });
-    }catch{ return null; }
+      const mode=getCoordMode();
+      const base={mode,zone:(+els.zone.value)||0,South:!!els.south.checked,sample:String(els.sample.value||'1'),dxdy:(+els.dxdy.value)||200,edge:(+els.edge.value)||3};
+      if(mode==='deg'){ Object.assign(base,{lonStart:f4(els.lonStart.value),lonEnd:f4(els.lonEnd.value),latStart:f4(els.latStart.value),latEnd:f4(els.latEnd.value)}); }
+      else{ Object.assign(base,{xStart:f4(els.xStart.value),xEnd:f4(els.xEnd.value),yStart:f4(els.yStart.value),yEnd:f4(els.yEnd.value)}); }
+      return JSON.stringify(base);
+    }catch{return null;}
   }
   const needsRecompute=()=>!lastResult || currentSignature()!==lastSig;
-  // ------------------------------------------------
-
-  let offshoreData=[];
-
-  function showOverlay(title,step,pct){els.overlay.style.display='flex';setOverlay(title,step,pct);addEventListener('beforeunload',warnUnload)}
-  function hideOverlay(){els.overlay.style.display='none';removeEventListener('beforeunload',warnUnload)}
-  function setOverlay(title,step,pct){if(title)safeText(els.ovTitle,title);if(step)safeText(els.ovStep,step);if(pct!=null)safeWidth(els.ovBar,Math.max(0,Math.min(100,pct))+'%')}
-  function warnUnload(e){e.preventDefault();e.returnValue='Processing… please wait.'}
 
   function setStatus(msg,kind){safeText(els.status,msg);safeClass(els.status,'status '+(kind||''));}
-  function log(title, obj){
-    const t=new Date().toISOString();
-    els.logAll.textContent += `[${t}] ${title}\n` + (obj!=null?(typeof obj==='string'?obj:JSON.stringify(obj,null,2)):'') + `\n`;
-  }
+  function log(title,obj){ const t=new Date().toISOString(); els.logAll.textContent += `[${t}] ${title}\n` + (obj!=null?(typeof obj==='string'?obj:JSON.stringify(obj,null,2)):'') + `\n`; }
 
   function setDefaults(){
     els.lonStart.value=defaults.coordinates.longitude.start; els.lonEnd.value=defaults.coordinates.longitude.end;
     els.latStart.value=defaults.coordinates.latitude.start; els.latEnd.value=defaults.coordinates.latitude.end;
+    canonicalLL.lonStart=+els.lonStart.value; canonicalLL.lonEnd=+els.lonEnd.value;
+    canonicalLL.latStart=+els.latStart.value; canonicalLL.latEnd=+els.latEnd.value;
     els.zone.value=defaults.zone; els.south.checked=defaults.South;
+    syncMetersFromDegrees(true);
     els.sample.value=defaults.sample; els.dxdy.value=defaults.dxdy; els.edge.value=defaults.edgeSteps;
     els.fdpName.value=defaults.fdpName;
     renderSchematic();
@@ -371,13 +437,82 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     try{
       const qp=new URLSearchParams(location.search);
       const studyId=qp.get('studyId');
-      if(studyId){ els.fdpStudyId.value=studyId; log('Prefilled StudyId from URL', studyId); }
+      if(studyId){ $('fdpStudyId').value=studyId; log('Prefilled StudyId from URL', studyId); }
     }catch{}
   }
 
-  function renderSchematic(){
+  function syncMetersFromDegrees(force=true){
     const lonS=+els.lonStart.value,lonE=+els.lonEnd.value,latS=+els.latStart.value,latE=+els.latEnd.value;
-    const W=640,H=320,xL=((Math.min(lonS,lonE)+180)/360)*W,xR=((Math.max(lonS,lonE)+180)/360)*W;
+    const zone=+els.zone.value,South=!!els.south.checked;
+    if([lonS,lonE,latS,latE,zone].some(Number.isNaN)) return;
+    const env=envelopeUTMofLLRect(Math.min(lonS,lonE),Math.max(lonS,lonE),Math.min(latS,latE),Math.max(latS,latE),zone,South,64);
+    if(force || (!els.xStart.value && !els.xEnd.value && !els.yStart.value && !els.yEnd.value)){
+      els.xStart.value = Math.round(env.xmin);
+      els.xEnd.value   = Math.round(env.xmax);
+      els.yStart.value = Math.round(env.ymin);
+      els.yEnd.value   = Math.round(env.ymax);
+      setMetersAutoFlag(true);
+      log('Meters auto-filled from degrees (densified UTM envelope)', env);
+    }
+  }
+
+  function syncDegreesFromMeters(force=false){
+    const xS=+els.xStart.value,xE=+els.xEnd.value,yS=+els.yStart.value,yE=+els.yEnd.value;
+    const zone=+els.zone.value,South=!!els.south.checked;
+    if([xS,xE,yS,yE,zone].some(Number.isNaN)) return;
+    const env=envelopeLLofUTMRect(Math.min(xS,xE),Math.max(xS,xE),Math.min(yS,yE),Math.max(yS,yE),zone,South,64);
+    if(force || (!els.lonStart.value && !els.lonEnd.value && !els.latStart.value && !els.latEnd.value)){
+      els.lonStart.value = +env.lonStart.toFixed(4);
+      els.lonEnd.value   = +env.lonEnd.toFixed(4);
+      els.latStart.value = +env.latStart.toFixed(4);
+      els.latEnd.value   = +env.latEnd.toFixed(4);
+      log('Degrees derived from meters (densified LL envelope)', env);
+    }
+  }
+
+  function getBoundsLatLon(){
+    const zone=+els.zone.value,South=!!els.south.checked;
+    if(zone<1||zone>60) throw new Error('UTM zone 1..60.');
+
+    if(getCoordMode()==='m' && metersAreAuto()){
+      const {lonStart,lonEnd,latStart,latEnd}=canonicalLL;
+      return {lonStart:+lonStart,lonEnd:+lonEnd,latStart:+latStart,latEnd:+latEnd};
+    }
+
+    if(getCoordMode()==='deg'){
+      const lonStart=+els.lonStart.value,lonEnd=+els.lonEnd.value,latStart=+els.latStart.value,latEnd=+els.latEnd.value;
+      if([lonStart,lonEnd,latStart,latEnd].some(Number.isNaN)) throw new Error('All degree fields must be numbers.');
+      if(lonStart>lonEnd) throw new Error('Longitude start ≤ end.');
+      if(latStart>latEnd) throw new Error('Latitude start ≤ end.');
+      return {lonStart,lonEnd,latStart,latEnd};
+    } else {
+      const xStart=+els.xStart.value,xEnd=+els.xEnd.value,yStart=+els.yStart.value,yEnd=+els.yEnd.value;
+      if([xStart,xEnd,yStart,yEnd].some(Number.isNaN)) throw new Error('All meter fields must be numbers.');
+      if(xStart>xEnd) throw new Error('Easting start ≤ end.');
+      if(yStart>yEnd) throw new Error('Northing start ≤ end.');
+      return envelopeLLofUTMRect(xStart,xEnd,yStart,yEnd,zone,South,64);
+    }
+  }
+
+  function setCoordModeUI(mode){
+    const m = mode || getCoordMode();
+    if(m==='m'){
+      els.degInputs.style.display='none'; els.mInputs.style.display='block';
+      if(!els.xStart.value){ syncMetersFromDegrees(true); }
+    } else {
+      els.degInputs.style.display='block'; els.mInputs.style.display='none';
+      if(!els.lonStart.value){ syncDegreesFromMeters(true); }
+    }
+    renderSchematic();
+  }
+
+  function renderSchematic(){
+    let bounds;
+    try{ bounds = getBoundsLatLon(); }catch{ bounds = null; }
+    const W=640,H=320;
+    const lonS=bounds?bounds.lonStart:+els.lonStart.value, lonE=bounds?bounds.lonEnd:+els.lonEnd.value;
+    const latS=bounds?bounds.latStart:+els.latStart.value, latE=bounds?bounds.latEnd:+els.latEnd.value;
+    const xL=((Math.min(lonS,lonE)+180)/360)*W,xR=((Math.max(lonS,lonE)+180)/360)*W;
     const yT=((90-Math.max(latS,latE))/180)*H,yB=((90-Math.min(latS,latE))/180)*H;
     const minPix=168; const trueW=Math.max(0,xR-xL),trueH=Math.max(0,yB-yT);
     const rectW=Math.max(minPix,trueW),rectH=Math.max(minPix,trueH);
@@ -402,18 +537,30 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   }
 
   function openGoogleMapsPins(){
-    const lonStart=+els.lonStart.value,lonEnd=+els.lonEnd.value,latStart=+els.latStart.value,latEnd=+els.latEnd.value;
-    const west=Math.min(lonStart,lonEnd),east=Math.max(lonStart,lonEnd),south=Math.min(latStart,latEnd),north=Math.max(latStart,latEnd);
+    const b = getBoundsLatLon();
+    const west=Math.min(b.lonStart,b.lonEnd),east=Math.max(b.lonStart,b.lonEnd),south=Math.min(b.latStart,b.latEnd),north=Math.max(b.latStart,b.latEnd);
     const SW=`${south.toFixed(6)},${west.toFixed(6)}`,NW=`${north.toFixed(6)},${west.toFixed(6)}`,NE=`${north.toFixed(6)},${east.toFixed(6)}`,SE=`${south.toFixed(6)},${east.toFixed(6)}`;
     const url4=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}&waypoints=${encodeURIComponent(NW)}|${encodeURIComponent(SE)}`;
     const url2=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}`;
     const w=open(url4,'_blank','noopener'); if(!w||w.closed||typeof w.closed==='undefined') open(url2,'_blank','noopener');
   }
 
-  function buildRing({lonStart,lonEnd,latStart,latEnd}){return [[lonStart,latStart],[lonStart,latEnd],[lonEnd,latEnd],[lonEnd,latStart],[lonStart,latStart]]}
-  function buildUrl(sample,ring){const poly={type:'Polygon',coordinates:[ring]};const jsonsrc=encodeURIComponent(JSON.stringify(poly));return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;}
+  // Build polygon URL; use densified ring for accuracy
+  function buildUrl(sample,boundsLL){
+    const ring = buildDensifiedRing(boundsLL, 64);
+    const poly={type:'Polygon',coordinates:[ring]};
+    const jsonsrc=encodeURIComponent(JSON.stringify(poly));
+    return `https://api.odb.ntu.edu.tw/gebco?mode=Polygon&sample=${encodeURIComponent(String(sample))}&jsonsrc=${jsonsrc}`;
+  }
   async function callApi(url,signal){const r=await fetch(url,{headers:{accept:'application/json'},signal});if(!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);const t=await r.text();try{return JSON.parse(t)}catch{return t}}
-  function makeAxisInner(min,max,step,edge){const eps=1e-9,pad=Math.max(0,edge|0)*step;const s=min+pad,e=max-pad,vals=[];if(e-s<=step+eps) return {vals:[],startBound:s,endBound:e};for(let v=s;v<=e-step-eps;v+=step) vals.push(v);return {vals,startBound:s,endBound:e}}
+
+  function makeAxisInner(min,max,step,edge){
+    const eps=1e-9,pad=Math.max(0,edge|0)*step;
+    const s=min+pad,e=max-pad,vals=[];
+    if(e-s<=step+eps) return {vals:[],startBound:s,endBound:e};
+    for(let v=s;v<=e-step-eps;v+=step) vals.push(v);
+    return {vals,startBound:s,endBound:e}
+  }
   function knnIndices(pts,qx,qy,k=12){const d=pts.map((p,i)=>[i,(p[0]-qx)**2+(p[1]-qy)**2]);d.sort((a,b)=>a[1]-b[1]);return d.slice(0,Math.min(k,d.length)).map(x=>x[0])}
   function idwInterpolate(pts,vals,qx,qy,k=12,power=2,eps=1e-12){const idx=knnIndices(pts,qx,qy,k);let num=0,den=0;for(const i of idx){const dx=pts[i][0]-qx,dy=pts[i][1]-qy,d2=dx*dx+dy*dy;if(d2<eps) return vals[i];const w=1/Math.pow(d2,power/2);num+=w*vals[i];den+=w}return den>0?num/den:NaN}
   function gaussianKernel1D(sigma){const r=Math.max(1,Math.floor(sigma*3));const k=[];let s=0,s2=2*sigma*sigma;for(let i=-r;i<=r;i++){const v=Math.exp(-(i*i)/s2);k.push(v);s+=v}return k.map(v=>v/s)}
@@ -428,26 +575,43 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     }
     throw new Error('Unexpected API format (need longitude[], latitude[], z[]).')
   }
-  async function processDataAsync({apiData,zone,South,dxdy,edgeSteps},update){
+
+  async function processDataAsync({apiData,zone,South,dxdy,edgeSteps,utmBoundsRequested},update){
     const rows=normalizeApiData(apiData);
-    const utm=`+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`, proj=proj4('WGS84',utm);
+    const proj=proj4('WGS84',utmProj(zone,South));
+
     update('Projecting…',8);
     for(let i=0;i<rows.length;i++){const xy=proj.forward([rows[i].longitude,rows[i].latitude]);rows[i].X=xy[0];rows[i].Y=xy[1]; if(i%2000===0) await nextFrame();}
-    const dx=dxdy,dy=dxdy,xmin=Math.min(...rows.map(r=>r.X)),xmax=Math.max(...rows.map(r=>r.X)),ymin=Math.min(...rows.map(r=>r.Y)),ymax=Math.max(...rows.map(r=>r.Y));
-    const axX=makeAxisInner(xmin,xmax,dx,edgeSteps),axY=makeAxisInner(ymin,ymax,dy,edgeSteps); const x_vals=axX.vals,y_vals=axY.vals;
+
+    // Axes from requested UTM envelope (stable with edge offset)
+    const xmin = utmBoundsRequested.xmin;
+    const xmax = utmBoundsRequested.xmax;
+    const ymin = utmBoundsRequested.ymin;
+    const ymax = utmBoundsRequested.ymax;
+
+    const dx=dxdy,dy=dxdy;
+    const axX=makeAxisInner(xmin,xmax,dx,edgeSteps);
+    const axY=makeAxisInner(ymin,ymax,dy,edgeSteps);
+
+    const x_vals=axX.vals,y_vals=axY.vals;
     if(!x_vals.length||!y_vals.length) throw new Error('No interior grid after edge offset. Reduce offset/spacing.');
+
     const pts=rows.map(r=>[r.X,r.Y]),vals=rows.map(r=>r.Z),W=x_vals.length,H=y_vals.length; let Z=new Float64Array(W*H);
+
     update('Gridding (IDW)…',22);
     for(let j=0;j<H;j++){const y=y_vals[j];for(let i=0;i<W;i++){const x=x_vals[i];let z=idwInterpolate(pts,vals,x,y,12,2);if(Number.isNaN(z)) z=vals[0];Z[j*W+i]=z;} if(j%2===0) await nextFrame();}
+
     const ker=gaussianKernel1D(5),r=(ker.length-1)/2,tmp=new Float64Array(Z.length),out=new Float64Array(Z.length);
     update('Smoothing X…',60);
     for(let y=0;y<H;y++){for(let x=0;x<W;x++){let a=0;for(let i=-r;i<=r;i++){const xx=Math.min(W-1,Math.max(0,x+i));a+=ker[i+r]*Z[y*W+xx];} tmp[y*W+x]=a;} if(y%4===0) await nextFrame();}
     update('Smoothing Y…',74);
     for(let y=0;y<H;y++){for(let x=0;x<W;x++){let a=0;for(let j=-r;j<=r;j++){const yy=Math.min(H-1,Math.max(0,y+j));a+=ker[j+r]*tmp[yy*W+x];} out[y*W+x]=a;} if(y%4===0) await nextFrame();}
     Z=out;
+
     update('Building output…',90);
     const grid=[]; for(let rI=0;rI<H;rI++){const y=y_vals[rI];for(let cI=0;cI<W;cI++){const x=x_vals[cI];grid.push([+x.toFixed(4),+y.toFixed(4),Z[rI*W+cI],cI+1,rI+1]);} if(rI%8===0) await nextFrame();}
     grid.sort((a,b)=>(a[4]-b[4])||(a[3]-b[3]));
+
     const x0=+axX.startBound.toFixed(4),x1=+axX.endBound.toFixed(4),y0=+axY.startBound.toFixed(4),y1=+axY.endBound.toFixed(4);
     const header=`# Type: scattered data
 # Version: 6
@@ -475,21 +639,34 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
       dims:{x:x_vals.length,y:y_vals.length},bounds:{xmin:x0,xmax:x1,ymin:y0,ymax:y1}};
   }
 
+  function showOverlay(title,step,pct){els.overlay.style.display='flex';setOverlay(title,step,pct);addEventListener('beforeunload',warnUnload)}
+  function hideOverlay(){els.overlay.style.display='none';removeEventListener('beforeunload',warnUnload)}
+  function setOverlay(title,step,pct){if(title)safeText(els.ovTitle,title);if(step)safeText(els.ovStep,step);if(pct!=null)safeWidth(els.ovBar,Math.max(0,Math.min(100,pct))+'%')}
+  function warnUnload(e){e.preventDefault();e.returnValue='Processing… please wait.'}
+
   async function computeBathymetry(){
-    const lonStart=+els.lonStart.value,lonEnd=+els.lonEnd.value,latStart=+els.latStart.value,latEnd=+els.latEnd.value,zone=+els.zone.value,South=!!els.south.checked;
-    if([lonStart,lonEnd,latStart,latEnd,zone].some(Number.isNaN)) throw new Error('All fields must be numbers.');
-    if(lonStart>lonEnd) throw new Error('Longitude start ≤ end.');
-    if(latStart>latEnd) throw new Error('Latitude start ≤ end.');
-    if(zone<1||zone>60) throw new Error('UTM zone 1..60.');
+    const zone=+els.zone.value,South=!!els.south.checked;
+    const ll = getBoundsLatLon();
     controller?.abort(); controller=new AbortController();
+
+    // Requested UTM bounds from the LL rect (edgeSteps trims later)
+    const utmEnv = envelopeUTMofLLRect(ll.lonStart,ll.lonEnd,ll.latStart,ll.latEnd,zone,South,128);
+
     showOverlay('GEBCO','Calling…',2);
-    const apiURL=buildUrl((els.sample.value||'1'),buildRing({lonStart,lonEnd,latStart,latEnd}));
+    const apiURL=buildUrl((els.sample.value||'1'), ll); // densified ring
     const apiData=await callApi(apiURL, controller.signal);
     log('GEBCO URL', apiURL);
-    log('GEBCO response', apiData);
-    const res=await processDataAsync({apiData,zone,South,dxdy:Math.max(1,+els.dxdy.value||200),edgeSteps:Math.max(0,Math.floor(+els.edge.value||3))},(s,p)=>setOverlay('Processing',s,p));
+    log('GEBCO response (summary)', Array.isArray(apiData)?`rows:${apiData.length}`:Object.keys(apiData).slice(0,5));
+
+    const res=await processDataAsync({
+      apiData,zone,South,
+      dxdy:Math.max(1,+els.dxdy.value||200),
+      edgeSteps:Math.max(0,Math.floor(+els.edge.value||3)),
+      utmBoundsRequested: utmEnv
+    },(s,p)=>setOverlay('Processing',s,p));
+
     log('Processed preview (first 30 rows)', res.preview);
-    lastResult=res; lastSig=currentSignature(); // <-- NEW: record signature after computing
+    lastResult=res; lastSig=currentSignature();
     setStatus('Ready','ok'); return res;
   }
 
@@ -527,9 +704,9 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     return {body,contentType:`multipart/form-data; boundary=${boundary}`};
   }
 
-  async function fdpPostJob({name,appKey,partition,authKey,studyId}){
+  async function fdpPostJob({name,appKey,partition,authKey}){
     const url='https://br1.api.delfi.slb.com/fdplan/data-sources/v2/data-source-jobs/';
-    const payload={name,description:`Generated ${new Date().toISOString()}`,source:{type:'test:data-types:gebco-external',store:'Patrick Custom Solution'},target:{type:'earth-vision-grid'},tags:[`StudyId:${studyId}`],dataProviders:{items:[{name:'Github',sources:[SOURCE_URL],description:'Dumy test'}]}};
+    const payload={name,description:`Generated ${new Date().toISOString()}`,source:{type:'test:data-types:gebco-external',store:'Patrick Custom Solution'},target:{type:'earth-vision-grid'},tags:[],dataProviders:{items:[{name:'Github',sources:[SOURCE_URL],description:'Dumy test'}]}};
     const headers=buildHeaders({authKey,appKey,partition,contentType:'application/json'});
     logRequest({method:'POST',url,headers,body:payload});
     const res=await fetch(url,{method:'POST',headers,body:JSON.stringify(payload)});
@@ -601,9 +778,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     return data;
   }
 
-  // === Offshore dropdown grouped by Basin ===
-  const DEFAULT_OFFSHORE_NAME = 'Aram (Block)';
-
+  const DEFAULT_OFFSHORE_NAME='Aram (Block)';
   function populateOffshoreDropdown(defaultName=DEFAULT_OFFSHORE_NAME){
     offshoreData = parseOffshoreCSV(OFFSHORE_CSV);
     const basins = Array.from(new Set(offshoreData.map(r=>r.Basin))).sort((a,b)=>a.localeCompare(b, undefined, {sensitivity:'base'}));
@@ -620,26 +795,22 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
       const first = els.offshore.querySelector('optgroup > option');
       idx = first ? +first.value : -1;
     }
-    if (idx >= 0) {
-      els.offshore.value = String(idx);
-      applyOffshoreSelection(idx);
-    }
+    if (idx >= 0) { els.offshore.value = String(idx); applyOffshoreSelection(idx); }
   }
 
   function applyOffshoreSelection(idx){
-    const r = offshoreData[idx];
-    if(!r) return;
-    els.lonStart.value = r.Lon_Start;
-    els.lonEnd.value   = r.Lon_End;
-    els.latStart.value = r.Lat_Start;
-    els.latEnd.value   = r.Lat_End;
-    els.zone.value     = r.UTM_Zone;
-    els.south.checked  = !!r.South_Hemisphere;
-    log('Offshore selection applied', {name:r.Name, basin:r.Basin, bounds:{lon:[r.Lon_Start,r.Lon_End], lat:[r.Lat_Start,r.Lat_End]}, zone:r.UTM_Zone, south:r.South_Hemisphere});
+    const r = offshoreData[idx]; if(!r) return;
+    els.lonStart.value = r.Lon_Start; els.lonEnd.value = r.Lon_End;
+    els.latStart.value = r.Lat_Start; els.latEnd.value = r.Lat_End;
+    canonicalLL.lonStart=r.Lon_Start; canonicalLL.lonEnd=r.Lon_End;
+    canonicalLL.latStart=r.Lat_Start; canonicalLL.latEnd=r.Lat_End;
+    els.zone.value = r.UTM_Zone; els.south.checked = !!r.South_Hemisphere;
+    setMetersAutoFlag(false);
+    syncMetersFromDegrees(true);
+    log('Offshore selection applied (canonical set)', {name:r.Name, basin:r.Basin, bounds:{lon:[r.Lon_Start,r.Lon_End], lat:[r.Lat_Start,r.Lat_End]}, zone:r.UTM_Zone, south:r.South_Hemisphere});
     renderSchematic();
   }
 
-  // Filenames: "<Name>_<YYYYMMDD_HHmmssZ>.txt"
   function sanitizeFileComponent(s){
     let base = (s||'Custom Area').toString().trim();
     base = base.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -657,12 +828,9 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   }
   function utcStamp(){
     const d = new Date();
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth()+1).padStart(2,'0');
-    const day = String(d.getUTCDate()).padStart(2,'0');
-    const hh = String(d.getUTCHours()).padStart(2,'0');
-    const mm = String(d.getUTCMinutes()).padStart(2,'0');
-    const ss = String(d.getUTCSeconds()).padStart(2,'0');
+    const y = d.getUTCFullYear(), m = String(d.getUTCMonth()+1).padStart(2,'0');
+    const day = String(d.getUTCDate()).padStart(2,'0'), hh = String(d.getUTCHours()).padStart(2,'0');
+    const mm = String(d.getUTCMinutes()).padStart(2,'0'), ss = String(d.getUTCSeconds()).padStart(2,'0');
     return `${y}${m}${day}_${hh}${mm}${ss}Z`;
   }
 
@@ -671,19 +839,32 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     if(__listenersBound) return; __listenersBound=true;
     $('schematic')?.addEventListener('click', openGoogleMapsPins);
 
-    // Keep schematic fresh on changes
-    let _t; ['input','change'].forEach(ev=>[els.lonStart,els.lonEnd,els.latStart,els.latEnd].forEach(i=>i?.addEventListener(ev,()=>{clearTimeout(_t);_t=setTimeout(renderSchematic,60)},{passive:true})));
-
-    // Offshore => fill inputs
-    els.offshore?.addEventListener('change', (e)=>{
-      const v = e.target.value; if(v==='') return; applyOffshoreSelection(+v);
+    let _t;
+    ['input','change'].forEach(ev=>{
+      [els.lonStart,els.lonEnd,els.latStart,els.latEnd,els.xStart,els.xEnd,els.yStart,els.yEnd,els.zone,els.south]
+        .forEach(i=>i?.addEventListener(ev,()=>{clearTimeout(_t);_t=setTimeout(renderSchematic,60)},{passive:true}));
     });
 
-    // Download: recompute if params changed since last compute
+    els.modeDeg?.addEventListener('change',()=>{ if(els.modeDeg.checked){ setCoordModeUI('deg'); } });
+    els.modeM?.addEventListener('change',()=>{ if(els.modeM.checked){ setCoordModeUI('m'); } });
+
+    els.offshore?.addEventListener('change', (e)=>{ const v = e.target.value; if(v==='') return; applyOffshoreSelection(+v); });
+
+    [els.xStart,els.xEnd,els.yStart,els.yEnd].forEach(el=>{
+      el?.addEventListener('input', ()=> setMetersAutoFlag(false));
+      el?.addEventListener('change', ()=> { setMetersAutoFlag(false); if(getCoordMode()==='m') syncDegreesFromMeters(false); });
+    });
+
+    [els.zone,els.south].forEach(el=>{
+      el?.addEventListener('change', ()=>{
+        if(metersAreAuto()){ syncMetersFromDegrees(true); } else { syncDegreesFromMeters(false); }
+      });
+    });
+
     els.btnDownload?.addEventListener('click', async()=>{
       try{
         showOverlay('Preparing file…','Checking',8);
-        if(needsRecompute()){ await computeBathymetry(); } // <-- CHANGED
+        if(needsRecompute()){ await computeBathymetry(); }
         const name = sanitizeFileComponent(currentOffshoreName());
         const filename = `${name}_${utcStamp()}.txt`;
         setOverlay('Preparing download…',`Creating ${filename}`,96); await nextFrame();
@@ -694,15 +875,14 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
       }catch(e){ setStatus(e?.message||String(e),'err'); hideOverlay(); }
     });
 
-    // FDPlan pipeline: same recompute rule
     els.btnRunAll?.addEventListener('click', async()=>{
       try{
         setStatus('Starting…'); showOverlay('FDPlan Upload','Reading inputs',5);
         const creds = readCreds({strict:true});
         setOverlay(null,'Computing bathymetry',10);
-        if(needsRecompute()){ await computeBathymetry(); } // <-- CHANGED
+        if(needsRecompute()){ await computeBathymetry(); }
         setOverlay(null,'Creating job',25);
-        const jobId = await fdpPostJob({name:creds.name,appKey:creds.appKey,partition:creds.partition,authKey:creds.authKey,studyId:creds.studyId});
+        const jobId = await fdpPostJob({name:creds.name,appKey:creds.appKey,partition:creds.partition,authKey:creds.authKey});
         setOverlay(null,'Finding container',45);
         const containerID = await fdpFetchContainer({jobId,appKey:creds.appKey,partition:creds.partition,authKey:creds.authKey});
         setOverlay(null,'Uploading file',70);
@@ -721,7 +901,6 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   }
 
   function init(){
-    if(__inited) return; __inited=true;
     bindEls();
     setDefaults();
     populateOffshoreDropdown();
