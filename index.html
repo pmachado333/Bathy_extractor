@@ -1,4 +1,4 @@
-<!-- /mnt/data/index.html -->
+<!-- BATHY Extractor -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -542,7 +542,8 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     const SW=`${south.toFixed(6)},${west.toFixed(6)}`,NW=`${north.toFixed(6)},${west.toFixed(6)}`,NE=`${north.toFixed(6)},${east.toFixed(6)}`,SE=`${south.toFixed(6)},${east.toFixed(6)}`;
     const url4=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}&waypoints=${encodeURIComponent(NW)}|${encodeURIComponent(SE)}`;
     const url2=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}`;
-    const w=open(url4,'_blank','noopener'); if(!w||w.closed||typeof w.closed==='undefined') open(url2,'_blank','noopener');
+    const w=open(url4,'_blank','noopener'); 
+    // if(!w||w.closed||typeof w.closed==='undefined') open(url2,'_blank','noopener');
   }
 
   // Build polygon URL; use densified ring for accuracy
