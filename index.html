@@ -370,7 +370,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   function toUTM(lon,lat,zone,South){ return proj4('WGS84', utmProj(zone,South)).forward([lon,lat]); }
   function toLL(x,y,zone,South){ return proj4(utmProj(zone,South), 'WGS84').forward([x,y]); }
 
-  // Densified envelopes (why: UTM edges are curved in lon/lat)
+  // I densify the envelopes because UTM edges curve in lon/lat.
   function envelopeUTMofLLRect(lonS,lonE,latS,latE,zone,South,n=64){
     const p = proj4('WGS84', utmProj(zone,South));
     let xmin=+Infinity,xmax=-Infinity,ymin=+Infinity,ymax=-Infinity;
@@ -392,7 +392,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     return { lonStart:lonMin, lonEnd:lonMax, latStart:latMin, latEnd:latMax };
   }
 
-  // Build a densified rectangular ring (why: better edge coverage in API)
+  // I build a densified rectangular ring to get better edge coverage when calling the API.
   function buildDensifiedRing({lonStart,lonEnd,latStart,latEnd}, n=64){
     const ring=[];
     for(let i=0;i<=n;i++){ const t=i/n; ring.push([lonStart+(lonEnd-lonStart)*t, latStart]); }
@@ -546,7 +546,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     // if(!w||w.closed||typeof w.closed==='undefined') open(url2,'_blank','noopener');
   }
 
-  // Build polygon URL; use densified ring for accuracy
+  // I build the polygon URL using the densified ring for accuracy.
   function buildUrl(sample,boundsLL){
     const ring = buildDensifiedRing(boundsLL, 64);
     const poly={type:'Polygon',coordinates:[ring]};
@@ -584,7 +584,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     update('Projecting…',8);
     for(let i=0;i<rows.length;i++){const xy=proj.forward([rows[i].longitude,rows[i].latitude]);rows[i].X=xy[0];rows[i].Y=xy[1]; if(i%2000===0) await nextFrame();}
 
-    // Axes from requested UTM envelope (stable with edge offset)
+    // I derive axes from the requested UTM envelope so the edge offset stays stable.
     const xmin = utmBoundsRequested.xmin;
     const xmax = utmBoundsRequested.xmax;
     const ymin = utmBoundsRequested.ymin;
@@ -650,11 +650,11 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     const ll = getBoundsLatLon();
     controller?.abort(); controller=new AbortController();
 
-    // Requested UTM bounds from the LL rect (edgeSteps trims later)
+    // I take UTM bounds from the LL rectangle; edgeSteps trims later.
     const utmEnv = envelopeUTMofLLRect(ll.lonStart,ll.lonEnd,ll.latStart,ll.latEnd,zone,South,128);
 
     showOverlay('GEBCO','Calling…',2);
-    const apiURL=buildUrl((els.sample.value||'1'), ll); // densified ring
+    const apiURL=buildUrl((els.sample.value||'1'), ll)
     const apiData=await callApi(apiURL, controller.signal);
     log('GEBCO URL', apiURL);
     log('GEBCO response (summary)', Array.isArray(apiData)?`rows:${apiData.length}`:Object.keys(apiData).slice(0,5));
