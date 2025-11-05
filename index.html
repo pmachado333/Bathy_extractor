@@ -1,4 +1,3 @@
-<!-- BATHY Extractor -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,10 +15,17 @@
     .card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 6px 24px rgba(0,0,0,.06)}
     .content{padding:16px}
     .grid-layout{display:grid;gap:16px;grid-template-columns:1.15fr .85fr;grid-template-areas:
-      "coords schematic" "proj right" "logs logs"}
-    @media (max-width:979px){.grid-layout{grid-template-columns:1fr;grid-template-areas:"coords" "schematic" "proj" "right" "logs"}}
+      "coords schematic"
+      "proj right"
+      "actions right"
+      "logs logs"}
+    @media (max-width:979px){
+      .grid-layout{grid-template-columns:1fr;grid-template-areas:
+        "coords" "schematic" "proj" "actions" "right" "logs"}
+    }
     .group{border:1px solid var(--bd);border-radius:12px;padding:12px;background:#fff}
     .coords{grid-area:coords}.schem{grid-area:schematic}.proj{grid-area:proj}.right{grid-area:right}.logs{grid-area:logs}
+    .actions-box{grid-area:actions}
     h2{margin:0 0 6px;font-size:15px}
     .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
     label{display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#0e2a4f}
@@ -31,7 +37,7 @@
     button{border:none;background:var(--slb);color:#fff;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(0,51,102,.25);transition:filter .15s,transform .06s}
     .secondary{background:#fff;color:#0e2a4f;border:1px solid #cfe1f7;box-shadow:none}
     button:hover{filter:brightness(1.05)}button:active{transform:translateY(1px)}
-    .status{min-height:20px;font-size:13px;color:#64748b}.status.ok{color:var(--ok)}.status.err{color:#c62828}
+    .status{min-height:20px;font-size:13px;color:#64748b}.status.ok{color:var(--ok)}.status.err{color:var(--err)}
     pre{background:#0c1b33;color:#e7eefc;border:1px solid #243a67;border-radius:10px;padding:10px;white-space:pre;overflow:auto;font-family:ui-monospace,Menlo,Consolas,monospace}
     .schematic-title{display:flex;justify-content:center}.schematic-wrap{border:1px solid var(--bd);border-radius:10px;padding:10px;background:#fbfdff}.schematic{cursor:pointer}.schematic svg{width:100%;height:auto;display:block}
     .right .stack details{border:1px solid var(--bd);border-radius:12px;padding:8px 10px;background:#fff}
@@ -61,6 +67,10 @@
     footer.tiny{max-width:1100px;margin:8px auto 20px;padding:6px 12px 0;border-top:1px solid var(--bd);font-size:10px;line-height:1.25;color:#64748b;opacity:.9}
     footer.tiny a{color:inherit;text-decoration:underline;word-break:break-all}
     .divider{height:1px;background:#e6eef7;margin:8px 0}
+    .hidden{display:none !important}
+    .badge-row{display:flex;justify-content:flex-end;margin:2px 0 8px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;background:#eef3fb;border:1px solid #d7e3f4;font-size:12px;font-weight:800;color:#0e2a4f}
+    .pill small{font-weight:600;color:#64748b}
   </style>
 </head>
 <body>
@@ -83,16 +93,23 @@
               <div>
                 <label for="offshore">Offshore Field/Block</label>
                 <select id="offshore"><option value="">— Select field/block —</option></select>
-                <div class="desc">Grouped by Basin; selecting fills Lon/Lat, UTM zone, and South flag.</div>
+                <div class="desc">Selecting fills Lon/Lat; zone is auto in Degrees, manual in Meters.</div>
               </div>
               <div>
                 <label>Input mode</label>
                 <div class="switch" role="radiogroup" aria-label="Coordinate input mode">
                   <label><input id="modeDegrees" type="radio" name="coordMode" value="deg" checked /> Degrees (Lon/Lat)</label>
-                  <label><input id="modeMeters" type="radio" name="coordMode" value="m" /> Meters (UTM X/Y)</label>
+                  <label><input id="modeMeters" type="radio" name="coordMode" value="m" /> Meters (UTM)</label>
                 </div>
-                <div class="desc">Switch to “Meters” to type UTM Easting/Northing (requires Zone &amp; South).</div>
+                <div class="desc">Meters mode requires Zone &amp; South; Degrees mode infers them automatically.</div>
               </div>
+            </div>
+
+            <!-- Inferred zone badge (Degrees mode only) -->
+            <div id="zoneBadgeRow" class="badge-row">
+              <span id="zoneBadge" class="pill hidden" aria-live="polite">
+                <small>Projection</small><span id="zoneBadgeText">UTM 00N</span>
+              </span>
             </div>
 
             <div id="degInputs">
@@ -123,7 +140,6 @@
             </div>
 
             <div id="mInputs" style="display:none">
-              <!-- <div class="divider"></div> -->
               <div class="row2">
                 <div>
                   <label for="xStart">Easting start (X start, m)</label>
@@ -159,19 +175,25 @@
             <div class="desc" style="text-align:center;margin-top:6px">Click to open Google Maps with the 4 corner pins.</div>
           </div>
 
+          <!-- Projection box: only the projection controls live here -->
           <div class="group proj" id="projectionBox">
-            <h2>Projection</h2>
+            <h2>Projection (UTM)</h2>
             <div class="row2">
               <div>
                 <label for="zone">UTM Zone</label>
                 <input id="zone" type="number" min="1" max="60" step="1" />
-                <div class="desc">UTM zone (1–60). Example: 23.</div>
+                <div class="desc">Visible only in Meters mode; user-defined there.</div>
               </div>
               <div class="switch">
                 <input id="south" type="checkbox" />
                 <label for="south">South Hemisphere</label>
               </div>
             </div>
+          </div>
+
+          <!-- NEW: Always-visible actions -->
+          <div class="group actions-box" id="actionBox">
+            <h2>Actions</h2>
             <div class="actions">
               <button id="btnDownload" type="button" class="secondary">Download Grid File</button>
               <button id="btnRunAll" type="button">Run & Upload to FDPlan</button>
@@ -302,7 +324,7 @@ Itapu,Santos,-24.886,-24.646,-42.828,-42.588,23,True
 Júpiter,Santos,-24.92,-24.68,-43.52,-43.28,23,True
 Bacalhau (BM-S-8/Carcará),Santos,-24.92,-24.68,-43.62,-43.38,23,True
 Atlanta,Santos,-24.233,-23.993,-42.013,-41.773,24,True
-Aram (Block),Santos,-24.1,-23.9,-42.3,-42.1,23,True
+Aram (Block),Santos,-25.81,-25.53,-44.82,-44.51,23,True
 Saturno (Block),Santos,-23.9,-23.7,-42.6,-42.4,23,True
 Titã (Block),Santos,-23.8,-23.6,-42.9,-42.7,23,True
 Peroba (Block),Santos,-23.5,-23.3,-41.9,-41.7,24,True
@@ -358,7 +380,8 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
       logAll: $('logAll'), logs: $('logs'),
       fdpName: $('fdpName'), fdpAppKey: $('fdpAppKey'), fdpPartition: $('fdpPartition'), fdpAuth: $('fdpAuth'), fdpStudyId: $('fdpStudyId'),
       overlay: $('overlay'), ovBar: $('ovBar'), ovTitle: $('ovTitle'), ovStep: $('ovStep'), btnCancel: $('btnCancel'),
-      offshore: $('offshore')
+      offshore: $('offshore'), projectionBox: $('projectionBox'),
+      zoneBadgeRow: $('zoneBadgeRow'), zoneBadge: $('zoneBadge'), zoneBadgeText: $('zoneBadgeText')
     });
   }
 
@@ -367,10 +390,41 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
 
   function getCoordMode(){ return els.modeM?.checked ? 'm' : 'deg'; }
   const utmProj=(zone,South)=>`+proj=utm +zone=${zone} ${South?'+south':''} +datum=WGS84 +units=m +no_defs`;
+
+  function setZoneAutoFlag(on){ els.zone?.setAttribute('data-auto-zone', on?'1':'0'); }
+  function zoneIsAuto(){ return els.zone?.getAttribute('data-auto-zone')==='1'; }
+
+  function inferUtmFromLL(lonS,lonE,latS,latE){
+    const lonMin=Math.min(lonS,lonE), lonMax=Math.max(lonS,lonE);
+    const latMin=Math.min(latS,latE), latMax=Math.max(latS,latE);
+    const lonMid=(lonMin+lonMax)/2, latMid=(latMin+latMax)/2;
+    let zone=Math.floor((lonMid+180)/6)+1; zone=Math.max(1,Math.min(60,zone));
+    const south = latMid < 0;
+    const minZone=Math.floor((lonMin+180)/6)+1, maxZone=Math.floor((lonMax+180)/6)+1;
+    return {zone,south,spans:minZone!==maxZone,minZone,maxZone};
+  }
+
+  function updateZoneBadge(){
+    const z=+els.zone.value; const s=!!els.south.checked;
+    const inDeg = getCoordMode()==='deg';
+    if(!z || Number.isNaN(z) || !inDeg){ addClass(els.zoneBadge,'hidden'); return; }
+    safeText(els.zoneBadgeText, `UTM ${z}${s?'S':'N'}`); remClass(els.zoneBadge,'hidden');
+  }
+
+  function updateZoneFromDegrees(force=false){
+    const lonS=+els.lonStart.value,lonE=+els.lonEnd.value,latS=+els.latStart.value,latE=+els.latEnd.value;
+    if([lonS,lonE,latS,latE].some(Number.isNaN)) return;
+    const {zone,south,spans,minZone,maxZone}=inferUtmFromLL(lonS,lonE,latS,latE);
+    if(force || zoneIsAuto()){
+      els.zone.value=zone; els.south.checked=south; setZoneAutoFlag(true);
+      if(spans){ log('BBox spans multiple UTM zones; using center zone', {minZone,maxZone,chosen:zone}); }
+    }
+    updateZoneBadge();
+  }
+
   function toUTM(lon,lat,zone,South){ return proj4('WGS84', utmProj(zone,South)).forward([lon,lat]); }
   function toLL(x,y,zone,South){ return proj4(utmProj(zone,South), 'WGS84').forward([x,y]); }
 
-  // I densify the envelopes because UTM edges curve in lon/lat.
   function envelopeUTMofLLRect(lonS,lonE,latS,latE,zone,South,n=64){
     const p = proj4('WGS84', utmProj(zone,South));
     let xmin=+Infinity,xmax=-Infinity,ymin=+Infinity,ymax=-Infinity;
@@ -392,15 +446,13 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     return { lonStart:lonMin, lonEnd:lonMax, latStart:latMin, latEnd:latMax };
   }
 
-  // I build a densified rectangular ring to get better edge coverage when calling the API.
   function buildDensifiedRing({lonStart,lonEnd,latStart,latEnd}, n=64){
     const ring=[];
     for(let i=0;i<=n;i++){ const t=i/n; ring.push([lonStart+(lonEnd-lonStart)*t, latStart]); }
     for(let i=1;i<=n;i++){ const t=i/n; ring.push([lonEnd, latStart+(latEnd-latStart)*t]); }
     for(let i=1;i<=n;i++){ const t=i/n; ring.push([lonEnd-(lonEnd-lonStart)*t, latEnd]); }
     for(let i=1;i<=n;i++){ const t=i/n; ring.push([lonStart, latEnd-(latEnd-latStart)*t]); }
-    ring.push(ring[0]);
-    return ring;
+    ring.push(ring[0]); return ring;
   }
 
   function setMetersAutoFlag(on){ els.mInputs?.setAttribute('data-auto-meters', on?'1':'0'); }
@@ -426,11 +478,12 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     els.latStart.value=defaults.coordinates.latitude.start; els.latEnd.value=defaults.coordinates.latitude.end;
     canonicalLL.lonStart=+els.lonStart.value; canonicalLL.lonEnd=+els.lonEnd.value;
     canonicalLL.latStart=+els.latStart.value; canonicalLL.latEnd=+els.latEnd.value;
-    els.zone.value=defaults.zone; els.south.checked=defaults.South;
+    setZoneAutoFlag(true); updateZoneFromDegrees(true);
+    els.zone.value=els.zone.value || defaults.zone;
+    els.south.checked=(els.south.checked!=null?els.south.checked:defaults.South);
     syncMetersFromDegrees(true);
     els.sample.value=defaults.sample; els.dxdy.value=defaults.dxdy; els.edge.value=defaults.edgeSteps;
-    els.fdpName.value=defaults.fdpName;
-    renderSchematic();
+    els.fdpName.value=defaults.fdpName; renderSchematic();
   }
 
   function applyQueryParams(){
@@ -443,16 +496,14 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
 
   function syncMetersFromDegrees(force=true){
     const lonS=+els.lonStart.value,lonE=+els.lonEnd.value,latS=+els.latStart.value,latE=+els.latEnd.value;
+    updateZoneFromDegrees(false);
     const zone=+els.zone.value,South=!!els.south.checked;
     if([lonS,lonE,latS,latE,zone].some(Number.isNaN)) return;
     const env=envelopeUTMofLLRect(Math.min(lonS,lonE),Math.max(lonS,lonE),Math.min(latS,latE),Math.max(latS,latE),zone,South,64);
     if(force || (!els.xStart.value && !els.xEnd.value && !els.yStart.value && !els.yEnd.value)){
-      els.xStart.value = Math.round(env.xmin);
-      els.xEnd.value   = Math.round(env.xmax);
-      els.yStart.value = Math.round(env.ymin);
-      els.yEnd.value   = Math.round(env.ymax);
-      setMetersAutoFlag(true);
-      log('Meters auto-filled from degrees (densified UTM envelope)', env);
+      els.xStart.value = Math.round(env.xmin); els.xEnd.value = Math.round(env.xmax);
+      els.yStart.value = Math.round(env.ymin); els.yEnd.value = Math.round(env.ymax);
+      setMetersAutoFlag(true); log('Meters auto-filled from degrees (densified UTM envelope)', env);
     }
   }
 
@@ -498,17 +549,19 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     const m = mode || getCoordMode();
     if(m==='m'){
       els.degInputs.style.display='none'; els.mInputs.style.display='block';
+      els.projectionBox.classList.remove('hidden'); setZoneAutoFlag(false);
       if(!els.xStart.value){ syncMetersFromDegrees(true); }
+      addClass(els.zoneBadge,'hidden');
     } else {
       els.degInputs.style.display='block'; els.mInputs.style.display='none';
-      if(!els.lonStart.value){ syncDegreesFromMeters(true); }
+      els.projectionBox.classList.add('hidden'); setZoneAutoFlag(true);
+      updateZoneFromDegrees(true); syncMetersFromDegrees(true); updateZoneBadge();
     }
     renderSchematic();
   }
 
   function renderSchematic(){
-    let bounds;
-    try{ bounds = getBoundsLatLon(); }catch{ bounds = null; }
+    let bounds; try{ bounds = getBoundsLatLon(); }catch{ bounds = null; }
     const W=640,H=320;
     const lonS=bounds?bounds.lonStart:+els.lonStart.value, lonE=bounds?bounds.lonEnd:+els.lonEnd.value;
     const latS=bounds?bounds.latStart:+els.latStart.value, latE=bounds?bounds.latEnd:+els.latEnd.value;
@@ -541,12 +594,9 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     const west=Math.min(b.lonStart,b.lonEnd),east=Math.max(b.lonStart,b.lonEnd),south=Math.min(b.latStart,b.latEnd),north=Math.max(b.latStart,b.latEnd);
     const SW=`${south.toFixed(6)},${west.toFixed(6)}`,NW=`${north.toFixed(6)},${west.toFixed(6)}`,NE=`${north.toFixed(6)},${east.toFixed(6)}`,SE=`${south.toFixed(6)},${east.toFixed(6)}`;
     const url4=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}&waypoints=${encodeURIComponent(NW)}|${encodeURIComponent(SE)}`;
-    const url2=`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(SW)}&destination=${encodeURIComponent(NE)}`;
-    const w=open(url4,'_blank','noopener'); 
-    // if(!w||w.closed||typeof w.closed==='undefined') open(url2,'_blank','noopener');
+    open(url4,'_blank','noopener');
   }
 
-  // I build the polygon URL using the densified ring for accuracy.
   function buildUrl(sample,boundsLL){
     const ring = buildDensifiedRing(boundsLL, 64);
     const poly={type:'Polygon',coordinates:[ring]};
@@ -556,8 +606,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   async function callApi(url,signal){const r=await fetch(url,{headers:{accept:'application/json'},signal});if(!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText}`);const t=await r.text();try{return JSON.parse(t)}catch{return t}}
 
   function makeAxisInner(min,max,step,edge){
-    const eps=1e-9,pad=Math.max(0,edge|0)*step;
-    const s=min+pad,e=max-pad,vals=[];
+    const eps=1e-9,pad=Math.max(0,edge|0)*step, s=min+pad, e=max-pad, vals=[];
     if(e-s<=step+eps) return {vals:[],startBound:s,endBound:e};
     for(let v=s;v<=e-step-eps;v+=step) vals.push(v);
     return {vals,startBound:s,endBound:e}
@@ -584,11 +633,8 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     update('Projecting…',8);
     for(let i=0;i<rows.length;i++){const xy=proj.forward([rows[i].longitude,rows[i].latitude]);rows[i].X=xy[0];rows[i].Y=xy[1]; if(i%2000===0) await nextFrame();}
 
-    // I derive axes from the requested UTM envelope so the edge offset stays stable.
-    const xmin = utmBoundsRequested.xmin;
-    const xmax = utmBoundsRequested.xmax;
-    const ymin = utmBoundsRequested.ymin;
-    const ymax = utmBoundsRequested.ymax;
+    const xmin = utmBoundsRequested.xmin, xmax = utmBoundsRequested.xmax;
+    const ymin = utmBoundsRequested.ymin, ymax = utmBoundsRequested.ymax;
 
     const dx=dxdy,dy=dxdy;
     const axX=makeAxisInner(xmin,xmax,dx,edgeSteps);
@@ -640,8 +686,8 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
       dims:{x:x_vals.length,y:y_vals.length},bounds:{xmin:x0,xmax:x1,ymin:y0,ymax:y1}};
   }
 
-  function showOverlay(title,step,pct){els.overlay.style.display='flex';setOverlay(title,step,pct);addEventListener('beforeunload',warnUnload)}
-  function hideOverlay(){els.overlay.style.display='none';removeEventListener('beforeunload',warnUnload)}
+  function showOverlay(title,step,pct){$('overlay').style.display='flex';setOverlay(title,step,pct);addEventListener('beforeunload',warnUnload)}
+  function hideOverlay(){$('overlay').style.display='none';removeEventListener('beforeunload',warnUnload)}
   function setOverlay(title,step,pct){if(title)safeText(els.ovTitle,title);if(step)safeText(els.ovStep,step);if(pct!=null)safeWidth(els.ovBar,Math.max(0,Math.min(100,pct))+'%')}
   function warnUnload(e){e.preventDefault();e.returnValue='Processing… please wait.'}
 
@@ -650,7 +696,6 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     const ll = getBoundsLatLon();
     controller?.abort(); controller=new AbortController();
 
-    // I take UTM bounds from the LL rectangle; edgeSteps trims later.
     const utmEnv = envelopeUTMofLLRect(ll.lonStart,ll.lonEnd,ll.latStart,ll.latEnd,zone,South,128);
 
     showOverlay('GEBCO','Calling…',2);
@@ -683,16 +728,10 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     const name=(els.fdpName.value||'Bathymetry External').trim();
     const studyId=(els.fdpStudyId.value||'').trim();
     if(strict){
-      const missing=[];
-      if(!appKey) missing.push('App Key');
-      if(!partition) missing.push('Data Partition');
-      if(!authKey) missing.push('Authorization');
-      if(!studyId) missing.push('StudyId');
-      if(missing.length){
-        els.fdpParams.open = true;
-        addClass(els.fdpParams,'warn'); setTimeout(()=>remClass(els.fdpParams,'warn'),1200);
-        throw new Error(`Cannot run: ${missing.join(', ')} required.`);
-      }
+      const missing=[]; if(!appKey) missing.push('App Key'); if(!partition) missing.push('Data Partition');
+      if(!authKey) missing.push('Authorization'); if(!studyId) missing.push('StudyId');
+      if(missing.length){ els.fdpParams.open = true; addClass(els.fdpParams,'warn'); setTimeout(()=>remClass(els.fdpParams,'warn'),1200);
+        throw new Error(`Cannot run: ${missing.join(', ')} required.`); }
     }
     return {appKey,partition,authKey,name,studyId};
   }
@@ -805,7 +844,12 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     els.latStart.value = r.Lat_Start; els.latEnd.value = r.Lat_End;
     canonicalLL.lonStart=r.Lon_Start; canonicalLL.lonEnd=r.Lon_End;
     canonicalLL.latStart=r.Lat_Start; canonicalLL.latEnd=r.Lat_End;
+
     els.zone.value = r.UTM_Zone; els.south.checked = !!r.South_Hemisphere;
+
+    if(getCoordMode()==='deg'){ setZoneAutoFlag(true); updateZoneFromDegrees(true); }
+    else { setZoneAutoFlag(false); }
+
     setMetersAutoFlag(false);
     syncMetersFromDegrees(true);
     log('Offshore selection applied (canonical set)', {name:r.Name, basin:r.Basin, bounds:{lon:[r.Lon_Start,r.Lon_End], lat:[r.Lat_Start,r.Lat_End]}, zone:r.UTM_Zone, south:r.South_Hemisphere});
@@ -835,7 +879,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     return `${y}${m}${day}_${hh}${mm}${ss}Z`;
   }
 
-  let __inited=false, __listenersBound=false;
+  let __listenersBound=false;
   function attachListeners(){
     if(__listenersBound) return; __listenersBound=true;
     $('schematic')?.addEventListener('click', openGoogleMapsPins);
@@ -844,6 +888,11 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
     ['input','change'].forEach(ev=>{
       [els.lonStart,els.lonEnd,els.latStart,els.latEnd,els.xStart,els.xEnd,els.yStart,els.yEnd,els.zone,els.south]
         .forEach(i=>i?.addEventListener(ev,()=>{clearTimeout(_t);_t=setTimeout(renderSchematic,60)},{passive:true}));
+    });
+
+    [els.lonStart,els.lonEnd,els.latStart,els.latEnd].forEach(el=>{
+      el?.addEventListener('input', ()=>{ if(getCoordMode()==='deg'){ updateZoneFromDegrees(false); }});
+      el?.addEventListener('change', ()=>{ if(getCoordMode()==='deg'){ updateZoneFromDegrees(false); syncMetersFromDegrees(true); }});
     });
 
     els.modeDeg?.addEventListener('change',()=>{ if(els.modeDeg.checked){ setCoordModeUI('deg'); } });
@@ -856,11 +905,9 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
       el?.addEventListener('change', ()=> { setMetersAutoFlag(false); if(getCoordMode()==='m') syncDegreesFromMeters(false); });
     });
 
-    [els.zone,els.south].forEach(el=>{
-      el?.addEventListener('change', ()=>{
-        if(metersAreAuto()){ syncMetersFromDegrees(true); } else { syncDegreesFromMeters(false); }
-      });
-    });
+    els.zone?.addEventListener('input', ()=> { setZoneAutoFlag(false); updateZoneBadge(); });
+    els.zone?.addEventListener('change', ()=> { setZoneAutoFlag(false); if(getCoordMode()==='deg') syncMetersFromDegrees(true); updateZoneBadge(); });
+    els.south?.addEventListener('change', ()=> { setZoneAutoFlag(false); if(getCoordMode()==='deg') syncMetersFromDegrees(true); updateZoneBadge(); });
 
     els.btnDownload?.addEventListener('click', async()=>{
       try{
@@ -872,7 +919,7 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
         const blob=new Blob([lastResult.finalText],{type:'text/plain;charset=utf-8'});
         const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename;
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
-        setOverlay('Done',`Download: ${filename}`,100); setTimeout(hideOverlay,400);
+        setOverlay('Done','Download ready',100); setTimeout(hideOverlay,400);
       }catch(e){ setStatus(e?.message||String(e),'err'); hideOverlay(); }
     });
 
@@ -902,12 +949,9 @@ Parnaíba (ENEVA Region),Parnaíba,-6.6,-6.4,-47.3,-47.1,23,True`;
   }
 
   function init(){
-    bindEls();
-    setDefaults();
-    populateOffshoreDropdown();
-    applyQueryParams();
-    safeText(els.status,'Idle');
-    attachListeners();
+    bindEls(); setDefaults(); populateOffshoreDropdown(); applyQueryParams();
+    setCoordModeUI(getCoordMode());
+    safeText(els.status,'Idle'); attachListeners();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init, { once: true });
